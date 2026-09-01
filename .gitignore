@@ -1,0 +1,7 @@
+*.bmp
+*.jpg
+*.png
+Templates/
+Images/
+*.ipynb
+__pycache__
