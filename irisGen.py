@@ -6,11 +6,11 @@ import matplotlib.pyplot as plt
 from scipy.spatial import distance
 
 # Carga las imágenes
-img1 = io.imread("C:\\Users\\wings\\Desktop\\1.jpg")
-img2 = io.imread("C:\\Users\\wings\\Desktop\\2.jpg")
-img3 = io.imread("C:\\Users\\wings\\Desktop\\3.jpg")
-img4 = io.imread("C:\\Users\\wings\\Desktop\\4.jpg")
-img5 = io.imread("C:\\Users\\wings\\Desktop\\5.jpg")
+img1 = io.imread("C:\\Users\\wings\\Documents\\Codigos\\Desarrrollo\\sistema_reconocimiento_iris\\CASIA\\TEST\\10\\010_1_3.jpg")
+img2 = io.imread("C:\\Users\\wings\\Documents\\Codigos\\Desarrrollo\\sistema_reconocimiento_iris\\CASIA\\TEST\\10\\010_2_3.jpg")
+img3 = io.imread("C:\\Users\\wings\\Documents\\Codigos\\Desarrrollo\\sistema_reconocimiento_iris\\CASIA\\TEST\\10\\010_2_4.jpg")
+img4 = io.imread("C:\\Users\\wings\\Documents\\Codigos\\Desarrrollo\\sistema_reconocimiento_iris\\CASIA\\TEST\\11\\011_1_3.jpg")
+img5 = io.imread("C:\\Users\\wings\\Documents\\Codigos\\Desarrrollo\\sistema_reconocimiento_iris\\CASIA\\TEST\\11\\011_2_3.jpg")
 
 # Convierte las imágenes a escala de grises
 imSize=(480,640)

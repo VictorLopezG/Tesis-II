@@ -2,8 +2,11 @@ import os.path
 from cv2 import imread, imshow, waitKey
 from scipy.io import savemat
 from Codificacion.process import process_iris
-from sklearn.cluster import KMeans,BisectingKMeans#,HDBSCAN
+from sklearn.cluster import KMeans,BisectingKMeans,DBSCAN
 from sklearn.cluster._hdbscan.hdbscan import HDBSCAN
+
+thresholds={'dct':1300,'gabor':0.38,'dwt':170,'pca':170}
+
 
 def register(im:str,cod:str,id:str):
     img = imread(im, 0)
@@ -66,3 +69,28 @@ def searchTree(im:str,cod:str,clusters:HDBSCAN,table:list, metric):
 
 
     #comparar con el cluster
+
+def searchSCAN(im:str,cod:str,db:HDBSCAN,table:list,metric):
+    img=imread(im,0)
+    #codificar
+    temp,mask=process_iris(img,cod)
+
+    dist=0
+    idx=0
+    for ind in range(len(db.centroids_)):
+        d=metric(db.centroids_[ind],temp)
+        if d<dist or ind-1<0:
+            idx=ind
+            dist=d
+
+    #comparar con el cluster
+    dists=[]
+    for ind in range(len(table)):
+        if table[ind][0]==idx:
+            dists.append([metric(temp,table[ind][2]),table[ind][1]])
+    dists.sort()
+
+    if dists[0][0]<thresholds[cod]:
+        
+    
+    return dists[0][1],dists[0][0]
