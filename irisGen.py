@@ -4,6 +4,12 @@ from skimage.transform import resize
 from scipy.linalg import svd
 import matplotlib.pyplot as plt
 from scipy.spatial import distance
+from sklearn.impute import SimpleImputer,KNNImputer
+import random
+from sklearn.decomposition import PCA
+import numpy as np
+
+pca=PCA(n_components=32)
 
 # Carga las imágenes
 img1 = io.imread("C:\\Users\\wings\\Documents\\Codigos\\Desarrrollo\\sistema_reconocimiento_iris\\CASIA\\TEST\\10\\010_1_3.jpg")
@@ -28,7 +34,13 @@ U3, S3, V3 = svd(img3)
 U4, S4, V4 = svd(img4)
 U5, S5, V5 = svd(img5)
 
-print(f'U:{U1.shape} S:{S1.shape} V:{V1.shape}')
+pc1=pca.fit_transform(img1)
+pc2=pca.fit_transform(img2)
+pc3=pca.fit_transform(img3)
+pc4=pca.fit_transform(img4)
+pc5=pca.fit_transform(img5)
+
+#print(f'U:{U1.shape} S:{S1.shape} V:{V1.shape}')
 
 
 ############## valores propios
@@ -53,17 +65,60 @@ valores_propios5 = np.square(np.diag(S5))
 indices_no_nulos5 = np.nonzero(valores_propios5)
 valores_propios5_no_nulos5 = valores_propios5[indices_no_nulos5]
 
-
+print(pc1.shape)
 
 # Crea la imagen sintética combinando los componentes principales de las imágenes originales
+#impS=SimpleImputer(missing_values=0,strategy='mean')
 
+#impS.fit([pc1.flatten(),pc2.flatten(),pc3.flatten(),pc4.flatten(),pc5.flatten()])
+impS = KNNImputer(n_neighbors=5, weights='uniform')
+newpc=np.concatenate((pc1[:96,:],pc2[96:192,:],pc3[192:288,:],pc4[288:384,:],pc5[384:480,:]))
+newpc[:,0]=0
+impS.fit([pc1.flatten(),pc2.flatten(),pc3.flatten(),pc4.flatten(),pc5.flatten(),newpc.flatten()])
+print(newpc.shape,newpc.flatten().shape)
+ipc=impS.fit_transform([newpc.flatten()])
+print(ipc.shape)
+iipc=ipc.reshape(480,32)
+print(iipc.shape)
+imputed_img=pca.inverse_transform(iipc)
+'''
+impS = SimpleImputer(missing_values=np.nan, strategy='most_frequent')
+impS.fit([S1,S2,S3,S4,S5])
+
+impV= SimpleImputer(missing_values=np.nan, strategy='most_frequent')
+impV.fit([V1.flatten(),V2.flatten(),V3.flatten(),V4.flatten(),V5.flatten()])
+
+impU= SimpleImputer(missing_values=np.nan, strategy='most_frequent')
+impU.fit([U1.flatten(),U2.flatten(),U3.flatten(),U4.flatten(),U5.flatten()])
+'''
 k = 120 # Número de componentes principales a utilizar
 new_S = np.concatenate((S1[:k], S2[:k], S3[:k], S4[:k], S5[:k]))
 new_U = np.concatenate((U1[:, :k], U2[:, :k], U3[:, :k], U4[:, :k], U5[:, :k]), axis=1)
 new_V = np.concatenate((V1[:k, :], V2[:k, :], V3[:k, :], V4[:k, :], V5[:k, :]))
+'''
+altS=np.concatenate((S1[:k], S2[:k], S3[:k], S4[:k], S5[:k]))
+altV=np.concatenate((U1[:, :k], U2[:, :k], U3[:, :k], U4[:, :k], U5[:, :k]), axis=1)
+altU=np.concatenate((V1[:k, :], V2[:k, :], V3[:k, :], V4[:k, :], V5[:k, :]))
 
-print(f'U:{new_U.shape} S:{new_S.shape} V:{new_V.shape}')
+for i in range(k):
+    j=random.randint(0,altS.shape[0]-1)
+    altS[j]=np.nan
+    x=random.randint(0,altU.shape[0]-1)
+    y=random.randint(0,altU.shape[1]-1)
+    altU[x][y]=np.nan
+    x=random.randint(0,altV.shape[0]-1)
+    y=random.randint(0,altV.shape[1]-1)
+    altV[x][y]=np.nan
 
+vShape=altV.shape
+uShape=altU.shape
+
+altS=impS.fit_transform([altS])
+altV=impV.fit_transform(altV)
+altU=impU.fit_transform(altU)
+
+imputed_img = np.dot(new_U, np.dot(np.diag(new_S), new_V))
+'''
 # Reconstruye la imagen sintética a partir de la nueva descomposición SVD
 synthetic_img = np.dot(new_U, np.dot(np.diag(new_S), new_V))
 Us,Ss,Vs=svd(synthetic_img)
@@ -71,8 +126,6 @@ Us,Ss,Vs=svd(synthetic_img)
 valores_propioss = np.square(np.diag(Ss))
 indices_no_nuloss = np.nonzero(valores_propioss)
 valores_propioss_no_nuloss = valores_propioss[indices_no_nuloss]
-
-
 
 # Calcula la desviación estándar de la imagen sintética respecto a las imágenes reales
 std1 = np.std(synthetic_img - img1)
@@ -83,23 +136,24 @@ std5 = np.std(synthetic_img - img5)
 
 
 # Muestra las imágenes reales y la imagen sintética en un mismo gráfico
-fig, axs = plt.subplots(1, 6)
+fig, axs = plt.subplots(2, 4)
 for ax in axs.flat:
     ax.set_xticks([])
     ax.set_yticks([])
-axs[ 0].imshow(img1,cmap='gray')
-axs[ 0].set_title('Imagen 1')
-axs[ 1].imshow(img2,cmap='gray')
-axs[ 1].set_title('Imagen 2')
-axs[ 2].imshow(img3,cmap='gray')
-axs[ 2].set_title('Imagen 3')
-axs[ 3].imshow(img4,cmap='gray')
-axs[ 3].set_title('Imagen 4')
-axs[ 4].imshow(img5,cmap='gray')
-axs[ 4].set_title('Imagen 5')
-axs[ 5].imshow(synthetic_img, cmap='gray')
-axs[ 5].set_title('Imagen sintética')
-
+axs[0][0].imshow(img1,cmap='gray')
+axs[0][0].set_title('Imagen 1')
+axs[0][1].imshow(img2,cmap='gray')
+axs[0][1].set_title('Imagen 2')
+axs[0][2].imshow(img3,cmap='gray')
+axs[0][2].set_title('Imagen 3')
+axs[0][3].imshow(img4,cmap='gray')
+axs[0][3].set_title('Imagen 4')
+axs[1][0].imshow(img5,cmap='gray')
+axs[1][0].set_title('Imagen 5')
+axs[1][1].imshow(synthetic_img, cmap='gray')
+axs[1][1].set_title('Imagen sintética')
+axs[1][2].imshow(imputed_img, cmap='gray')
+axs[1][2].set_title('Imagen imputada')
 
 
 # Muestra la desviación estándar de la imagen sintética respecto a las imágenes reales

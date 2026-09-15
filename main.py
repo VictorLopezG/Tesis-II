@@ -1,17 +1,15 @@
 from scipy.io import loadmat
-from scipy.cluster.hierarchy import linkage, dendrogram
-from sklearn.cluster import KMeans, BisectingKMeans, kmeans_plusplus, DBSCAN
+from sklearn.cluster import KMeans, BisectingKMeans, AgglomerativeClustering
 from sklearn.cluster._hdbscan.hdbscan import HDBSCAN
 from Codificacion.register import register, searchCents, searchTree,searchSCAN
 from os import path,listdir
-import matplotlib.pyplot as plt
 from Codificacion.metrics import euclideanDistance,hammingDistance
 import numpy as np
 
-COD='gabor'
-CLST='dbscan'
+COD='pca'
+CLST='ward'
 
-def joinTable(clusters:HDBSCAN|BisectingKMeans|KMeans,ids:list):
+def joinTable(clusters:HDBSCAN|BisectingKMeans|KMeans|AgglomerativeClustering,ids:list):
     table=[]
     for ind in range(len(ids)):
         table.append([clusters.labels_[ind],ids[ind],temps[ind]])
@@ -49,7 +47,9 @@ if __name__=='__main__':
         case 'k-means++':
             clusters=KMeans(n_clusters=3,random_state=0,init='k-means++').fit(temps)
         case 'ward':
-            tree=linkage(temps,method='ward')
+            tree=AgglomerativeClustering(n_clusters=3,linkage='ward').fit(temps)
+        case 'avg':
+            tree=AgglomerativeClustering(n_clusters=3,linkage='average').fit(temps)
         case 'dbscan':
             db=HDBSCAN(min_samples=1, store_centers='centroid',copy=False).fit(temps)
 
@@ -61,17 +61,15 @@ if __name__=='__main__':
 
     #Busqueda en arbol
     if CLST in ['ward','avg']:
-        print(tree)
-        plt.figure(figsize=(12, 5))
-        dendrogram(tree, orientation='top',
-           distance_sort=True, show_leaf_counts=True)
-        plt.title('Hierarchical Clustering Dendrogram')
-        plt.show()
+        table=joinTable(tree,ids)
+        res =searchTree("Images\\100.bmp",COD,tree,table,euclideanDistance)
+        print(res)
+
 
     #Busqueda en DBSCAN
-    if CLST=='dbscan':
+    if CLST=='hdbscan':
         table= joinTable(db,ids)
-        print(db.labels_)
-        print(table)
+        #print(db.labels_)
+        print(table[0])
         res= searchSCAN("Images\\100.bmp",COD,db,table,euclideanDistance)
         print(res)
