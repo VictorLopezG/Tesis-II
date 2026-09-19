@@ -65,11 +65,9 @@ if __name__=='__main__':
         res =searchTree("Images\\100.bmp",COD,tree,table,euclideanDistance)
         print(res)
 
-
     #Busqueda en DBSCAN
     if CLST=='hdbscan':
         table= joinTable(db,ids)
-        #print(db.labels_)
         print(table[0])
         res= searchSCAN("Images\\100.bmp",COD,db,table,euclideanDistance)
         print(res)

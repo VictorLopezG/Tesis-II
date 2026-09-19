@@ -1,5 +1,4 @@
 import numpy as np
-from skimage import io
 from skimage.transform import resize
 from scipy.linalg import svd
 import matplotlib.pyplot as plt
@@ -8,24 +7,38 @@ from sklearn.impute import SimpleImputer,KNNImputer
 import random
 from sklearn.decomposition import PCA
 import numpy as np
+from Codificacion.process import normalizeIris
+from cv2 import imshow, waitKey, imread
 
 pca=PCA(n_components=32)
 
 # Carga las imágenes
-img1 = io.imread("C:\\Users\\wings\\Documents\\Codigos\\Desarrrollo\\sistema_reconocimiento_iris\\CASIA\\TEST\\10\\010_1_3.jpg")
-img2 = io.imread("C:\\Users\\wings\\Documents\\Codigos\\Desarrrollo\\sistema_reconocimiento_iris\\CASIA\\TEST\\10\\010_2_3.jpg")
-img3 = io.imread("C:\\Users\\wings\\Documents\\Codigos\\Desarrrollo\\sistema_reconocimiento_iris\\CASIA\\TEST\\10\\010_2_4.jpg")
-img4 = io.imread("C:\\Users\\wings\\Documents\\Codigos\\Desarrrollo\\sistema_reconocimiento_iris\\CASIA\\TEST\\11\\011_1_3.jpg")
-img5 = io.imread("C:\\Users\\wings\\Documents\\Codigos\\Desarrrollo\\sistema_reconocimiento_iris\\CASIA\\TEST\\11\\011_2_3.jpg")
+img1 = imread("C:\\Users\\wings\\Documents\\Codigos\\Desarrrollo\\sistema_reconocimiento_iris\\CASIA\\TEST\\10\\010_1_3.jpg",0)
+img2 = imread("C:\\Users\\wings\\Documents\\Codigos\\Desarrrollo\\sistema_reconocimiento_iris\\CASIA\\TEST\\10\\010_2_3.jpg",0)
+img3 = imread("C:\\Users\\wings\\Documents\\Codigos\\Desarrrollo\\sistema_reconocimiento_iris\\CASIA\\TEST\\10\\010_2_4.jpg",0)
+img4 = imread("C:\\Users\\wings\\Documents\\Codigos\\Desarrrollo\\sistema_reconocimiento_iris\\CASIA\\TEST\\11\\011_1_3.jpg",0)
+img5 = imread("C:\\Users\\wings\\Documents\\Codigos\\Desarrrollo\\sistema_reconocimiento_iris\\CASIA\\TEST\\11\\011_2_3.jpg",0)
 
 # Convierte las imágenes a escala de grises
-imSize=(480,640)
 #asegurar que los tamaños sean iguales
-img1=resize(img1,imSize,anti_aliasing=True)
-img2=resize(img2,imSize,anti_aliasing=True)
-img3=resize(img3,imSize,anti_aliasing=True)
-img4=resize(img4,imSize,anti_aliasing=True)
-img5=resize(img5,imSize,anti_aliasing=True)
+'''
+imSize=(480,640)
+img1=resize(img1,imSize)
+img2=resize(img2,imSize)
+img3=resize(img3,imSize)
+img4=resize(img4,imSize)
+img5=resize(img5,imSize)
+'''
+
+img1,_=normalizeIris(img1)
+img2,_=normalizeIris(img2)
+imshow("b",img1)
+waitKey()
+img3,_=normalizeIris(img3)
+img4,_=normalizeIris(img4)
+img5,_=normalizeIris(img5)
+
+
 
 # Aplica el SVD a las imágenes
 U1, S1, V1 = svd(img1)
@@ -68,20 +81,21 @@ valores_propios5_no_nulos5 = valores_propios5[indices_no_nulos5]
 print(pc1.shape)
 
 # Crea la imagen sintética combinando los componentes principales de las imágenes originales
-#impS=SimpleImputer(missing_values=0,strategy='mean')
 
-#impS.fit([pc1.flatten(),pc2.flatten(),pc3.flatten(),pc4.flatten(),pc5.flatten()])
-impS = KNNImputer(n_neighbors=5, weights='uniform')
+#imputando 1 componente principal
+impc = KNNImputer(n_neighbors=5, weights='uniform')
 newpc=np.concatenate((pc1[:96,:],pc2[96:192,:],pc3[192:288,:],pc4[288:384,:],pc5[384:480,:]))
 newpc[:,0]=0
-impS.fit([pc1.flatten(),pc2.flatten(),pc3.flatten(),pc4.flatten(),pc5.flatten(),newpc.flatten()])
+
+impc.fit([pc1.flatten(),pc2.flatten(),pc3.flatten(),pc4.flatten(),pc5.flatten()])
 print(newpc.shape,newpc.flatten().shape)
-ipc=impS.fit_transform([newpc.flatten()])
+ipc=impc.fit_transform([newpc.flatten()])
 print(ipc.shape)
-iipc=ipc.reshape(480,32)
+iipc=ipc.reshape(64,32)
 print(iipc.shape)
-imputed_img=pca.inverse_transform(iipc)
-'''
+imputed_imgp=pca.inverse_transform(iipc)
+
+#imputando valores aleatorios de cada matriz de la descomposicion
 impS = SimpleImputer(missing_values=np.nan, strategy='most_frequent')
 impS.fit([S1,S2,S3,S4,S5])
 
@@ -90,12 +104,12 @@ impV.fit([V1.flatten(),V2.flatten(),V3.flatten(),V4.flatten(),V5.flatten()])
 
 impU= SimpleImputer(missing_values=np.nan, strategy='most_frequent')
 impU.fit([U1.flatten(),U2.flatten(),U3.flatten(),U4.flatten(),U5.flatten()])
-'''
-k = 120 # Número de componentes principales a utilizar
+
+k = 12 # Número de componentes principales a utilizar
 new_S = np.concatenate((S1[:k], S2[:k], S3[:k], S4[:k], S5[:k]))
 new_U = np.concatenate((U1[:, :k], U2[:, :k], U3[:, :k], U4[:, :k], U5[:, :k]), axis=1)
 new_V = np.concatenate((V1[:k, :], V2[:k, :], V3[:k, :], V4[:k, :], V5[:k, :]))
-'''
+
 altS=np.concatenate((S1[:k], S2[:k], S3[:k], S4[:k], S5[:k]))
 altV=np.concatenate((U1[:, :k], U2[:, :k], U3[:, :k], U4[:, :k], U5[:, :k]), axis=1)
 altU=np.concatenate((V1[:k, :], V2[:k, :], V3[:k, :], V4[:k, :], V5[:k, :]))
@@ -118,7 +132,7 @@ altV=impV.fit_transform(altV)
 altU=impU.fit_transform(altU)
 
 imputed_img = np.dot(new_U, np.dot(np.diag(new_S), new_V))
-'''
+
 # Reconstruye la imagen sintética a partir de la nueva descomposición SVD
 synthetic_img = np.dot(new_U, np.dot(np.diag(new_S), new_V))
 Us,Ss,Vs=svd(synthetic_img)
@@ -153,9 +167,15 @@ axs[1][0].set_title('Imagen 5')
 axs[1][1].imshow(synthetic_img, cmap='gray')
 axs[1][1].set_title('Imagen sintética')
 axs[1][2].imshow(imputed_img, cmap='gray')
-axs[1][2].set_title('Imagen imputada')
+axs[1][2].set_title('Imagen imputada r')
+axs[1][3].imshow(imputed_imgp, cmap='gray')
+axs[1][3].set_title('Imagen imputada p')
 
+print(imputed_img.shape)
+print(imputed_imgp.shape)
+print(synthetic_img.shape)
 
+'''
 # Muestra la desviación estándar de la imagen sintética respecto a las imágenes reales
 print(f"Desviación estándar imagen 1 respecto a la imagen sintetica: {std1:.2f}")
 print(f"Desviación estándar imagen 2 respecto a la imagen sintetica : {std2:.2f}")
@@ -206,3 +226,4 @@ print(f"Distancia de coseno entre la imagen sintética y la imagen 2: {cosine_di
 print(f"Distancia de coseno entre la imagen sintética y la imagen 3: {cosine_distance3}")
 print(f"Distancia de coseno entre la imagen sintética y la imagen 4: {cosine_distance4}")
 print(f"Distancia de coseno entre la imagen sintética y la imagen 5: {cosine_distance5}")
+'''

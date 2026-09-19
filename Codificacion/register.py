@@ -20,13 +20,7 @@ def calcCentroid(cluster:list):
 def register(im:str,cod:str,id:str):
     img = imread(im, 0)
 
-    #imshow("im",img)
-    #waitKey()
-
     temp,mask=process_iris(img,cod)
-
-    #imshow("temp",temp)
-    #waitKey()
 
     out_file = os.path.join(f'Templates/{cod}', f"{os.path.basename(im)[0:-4]}.mat")
     savemat(out_file, mdict={'id': id, 'template': temp, 'mask': mask})
@@ -59,6 +53,9 @@ def searchCents(im:str,cod:str,clusters:KMeans|BisectingKMeans,table:list, metri
             dists.append([metric(temp,table[ind][2]),table[ind][1]])
 
     dists.sort()
+
+    if dists[0][0]>thresholds[cod]:
+            return ['El individuo no se encuentra registrado', -1]
 
     return dists[0][1],dists[0][0]
 
@@ -94,6 +91,10 @@ def searchTree(im:str,cod:str,clusters:AgglomerativeClustering,table:list, metri
             dists.append([metric(temp,table[ind][2]),table[ind][1]])
     
     dists.sort()
+
+    if dists[0][0]>thresholds[cod]:
+            return ['El individuo no se encuentra registrado', -1]
+
     return dists[0][1],dists[0][0]
 
 
@@ -127,5 +128,8 @@ def searchSCAN(im:str,cod:str,db:HDBSCAN,table:list,metric):
                 break
 
     dists.sort()
+
+    if dists[0][0]>thresholds[cod]:
+        return ['El individuo no se encuentra registrado', -1]
     
     return dists[0][1],dists[0][0]
