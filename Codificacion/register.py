@@ -55,7 +55,7 @@ def searchCents(im:str,cod:str,clusters:KMeans|BisectingKMeans,table:list, metri
     dists.sort()
 
     if dists[0][0]>thresholds[cod]:
-            return ['El individuo no se encuentra registrado', -1]
+            return ['-1', -1]
 
     return dists[0][1],dists[0][0]
 
@@ -93,7 +93,7 @@ def searchTree(im:str,cod:str,clusters:AgglomerativeClustering,table:list, metri
     dists.sort()
 
     if dists[0][0]>thresholds[cod]:
-            return ['El individuo no se encuentra registrado', -1]
+            return ['-1', -1]
 
     return dists[0][1],dists[0][0]
 
@@ -130,6 +130,6 @@ def searchSCAN(im:str,cod:str,db:HDBSCAN,table:list,metric):
     dists.sort()
 
     if dists[0][0]>thresholds[cod]:
-        return ['El individuo no se encuentra registrado', -1]
+        return ['-1', -1]
     
     return dists[0][1],dists[0][0]

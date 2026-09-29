@@ -3,14 +3,14 @@ from skimage.transform import resize
 from scipy.linalg import svd
 import matplotlib.pyplot as plt
 from scipy.spatial import distance
-from sklearn.impute import SimpleImputer,KNNImputer
+from sklearn.impute import SimpleImputer,KNNImputer #mice con random forest ,rrelieff, ppca, Nipals-pca, mi-pcr,prime pca
 import random
 from sklearn.decomposition import PCA
 import numpy as np
 from Codificacion.process import normalizeIris
-from cv2 import imshow, waitKey, imread
+from cv2 import imshow, waitKey, imread,imwrite
 
-pca=PCA(n_components=32)
+pca=PCA(n_components=17)
 
 # Carga las imágenes
 img1 = imread("C:\\Users\\wings\\Documents\\Codigos\\Desarrrollo\\sistema_reconocimiento_iris\\CASIA\\TEST\\10\\010_1_3.jpg",0)
@@ -32,13 +32,9 @@ img5=resize(img5,imSize)
 
 img1,_=normalizeIris(img1)
 img2,_=normalizeIris(img2)
-imshow("b",img1)
-waitKey()
 img3,_=normalizeIris(img3)
 img4,_=normalizeIris(img4)
 img5,_=normalizeIris(img5)
-
-
 
 # Aplica el SVD a las imágenes
 U1, S1, V1 = svd(img1)
@@ -150,6 +146,21 @@ std5 = np.std(synthetic_img - img5)
 
 
 # Muestra las imágenes reales y la imagen sintética en un mismo gráfico
+fig, axs = plt.subplots(3, 1)
+for ax in axs.flat:
+    ax.set_xticks([])
+    ax.set_yticks([])
+
+axs[0].imshow(synthetic_img, cmap='gray')
+axs[0].set_title('combinacion')
+axs[1].imshow(imputed_img, cmap='gray')
+axs[1].set_title('Imagen imputacion')
+axs[2].imshow(imputed_imgp, cmap='gray')
+axs[2].set_title('imputacionde comp principal')
+
+plt.show()
+
+'''
 fig, axs = plt.subplots(2, 4)
 for ax in axs.flat:
     ax.set_xticks([])
@@ -170,6 +181,13 @@ axs[1][2].imshow(imputed_img, cmap='gray')
 axs[1][2].set_title('Imagen imputada r')
 axs[1][3].imshow(imputed_imgp, cmap='gray')
 axs[1][3].set_title('Imagen imputada p')
+plt.show()
+'''
+#print(imputed_img)
+#print(synthetic_img)
+imwrite('imp_p.bmp',imputed_imgp*255)
+imwrite('imp.bmp',imputed_img*96)
+imwrite('synth.bmp',synthetic_img*96)
 
 print(imputed_img.shape)
 print(imputed_imgp.shape)
@@ -182,7 +200,7 @@ print(f"Desviación estándar imagen 2 respecto a la imagen sintetica : {std2:.2
 print(f"Desviación estándar imagen 3 respecto a la imagen sintetica : {std3:.2f}")
 print(f"Desviación estándar imagen 4 respecto a la imagen sintetica : {std4:.2f}")
 print(f"Desviación estándar imagen 5 respecto a la imagen sintetica : {std5:.2f}")
-plt.show()
+
 
 
 # Calcula la distancia de Hamming entre la imagen sintética y cada imagen

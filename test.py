@@ -1,40 +1,59 @@
 from Codificacion.process import process_iris
-from Segmentacion.normalize import normalize_iris
-from Segmentacion.segment import segment
 from cv2 import imread, imshow, waitKey, imwrite
+from os import path, listdir
+from Codificacion.register import register
+from Codificacion.process import process_iris
+from Codificacion.metrics import euclideanDistance, hammingDistance
+from scipy.io import loadmat
 
-mat=imread("Images/4.bmp",0)
+codes=['gabor','dct','dwt','pca']
+thresholds={'pca':0.0028,'dct':0.03,'gabor':0.38,'dwt':0.0008}
 
-imshow("mat",mat)
-waitKey()
+if __name__=='__main__':
 
-iris, pupila, noise=segment(mat)
+    imgs=listdir("Images/")
 
-polar=normalize_iris(mat,pupila[:2],pupila[2],iris[:2],iris[2])
-imwrite("norm.bmp",polar)
-imshow("mat",polar)
-waitKey()
+    for COD in codes:
+        dist=euclideanDistance
+        if COD=='gabor':
+            dist=hammingDistance
+        resgistered=listdir(path.join("Templates",COD))
 
-temp,mask=process_iris(mat,'dct')
+        #registrar todo
 
-imwrite("dct.jpg",temp*255)
-imshow("dct",temp)
-waitKey()
+        for im in imgs:
+        #codificar imagenes
+            if im[:-4]+'.mat'not in resgistered:
+                register(path.join('Images',im),COD,im[:-4])
 
-temp,mask=process_iris(mat,'pca')
+        #cargar plantillas
+        print("Leyendo plantillas...")
 
-imwrite("pca.jpg",temp*255)
-imshow("pca",temp)
-waitKey()
+        entrys=listdir(path.join("Templates",COD))
 
-temp,mask=process_iris(mat,'dwt')
+        temps=[]
 
-imwrite("dwt.jpg",temp*255)
-imshow("dwt",temp)
-waitKey()
+        for temp in entrys:
+            template=loadmat(path.join("Templates",COD,temp))
+            temps.append([template['template'],''.join(template['id'])])
+        #buscar dentro de la bd
+        results=[]
+        print(f"probando codificacion: {COD}")
+        for im in imgs:
+            print(im)
+            img=imread('Images/'+im,0)
+            for temp in temps:
+                enc,mask=process_iris(img,COD)
+                d=dist(enc,temp[0])
+                if d<thresholds[COD]:
+                    results.append([d,im,temp[1]])
+                    break
 
-temp,mask=process_iris(mat,'gabor')
-
-imwrite("gabor.jpg",temp*255)
-imshow("gabor",temp)
-waitKey()
+        print(f"FN:{len(results)-len(imgs)}")
+        tp=0
+        for res in results:
+            if res[1][:-4]==res[2]:
+                tp=tp+1
+            else:
+                print(res)
+        print(f"TP:{tp/len(imgs)}")
