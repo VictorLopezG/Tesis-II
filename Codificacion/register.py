@@ -7,7 +7,7 @@ from sklearn.cluster._hdbscan.hdbscan import HDBSCAN
 from sklearn.metrics import accuracy_score,precision_score,recall_score
 import numpy as np
 
-thresholds={'dct':1300,'gabor':0.38,'dwt':170,'pca':170}
+thresholds={'pca':0.0028,'dct':0.03,'gabor':0.38,'dwt':0.0008}
 
 def calcCentroid(cluster:list):
     """Calcular el centroide de un cluster"""

@@ -192,3 +192,54 @@ def normalize_iris(image, pupil_center, pupil_radius, iris_center, iris_radius, 
                 normalized_iris[i, j] = image[y, x]
                 
     return np.uint8(normalized_iris)
+
+import numpy as np
+import cv2
+
+def rubber_sheet_inverse(polar_img, center, r_min, r_max):
+    """
+    Transforms a polar/normalized iris image back to Cartesian coordinates.
+    
+    Parameters:
+    - polar_img: NumPy array of shape (radius_size, theta_size), the unwrapped image.
+    - center: Tuple (cx, cy) of the pupil/iris center in the original image.
+    - r_min: Inner radius (pupil boundary).
+    - r_max: Outer radius (iris boundary).
+    
+    Returns:
+    - cart_img: Reconstructed Cartesian image containing the un-normalized region.
+    """
+    num_radii, num_thetas = polar_img.shape
+    cx, cy = center
+    
+    # Estimate size of output Cartesian canvas
+    max_radius_int = int(np.ceil(r_max))
+    canvas_size = 2 * max_radius_int + 1
+    cart_img = np.zeros((canvas_size, canvas_size), dtype=polar_img.dtype)
+    
+    # Shift center to the local canvas coordinates
+    local_cx = max_radius_int
+    local_cy = max_radius_int
+    
+    for y in range(canvas_size):
+        for x in range(canvas_size):
+            dx = x - local_cx
+            dy = y - local_cy
+            r = np.sqrt(dx**2 + dy**2)
+            
+            # Check if point falls within the r_min and r_max bounds
+            if r_min <= r <= r_max:
+                theta = np.arctan2(dy, dx)
+                if theta < 0:
+                    theta += 2 * np.pi
+                
+                # Map continuous r and theta to discrete polar image indices
+                r_idx = int((r - r_min) / (r_max - r_min) * (num_radii - 1))
+                theta_idx = int(theta / (2 * np.pi) * (num_thetas - 1))
+                
+                r_idx = np.clip(r_idx, 0, num_radii - 1)
+                theta_idx = np.clip(theta_idx, 0, num_thetas - 1)
+                
+                cart_img[y, x] = polar_img[r_idx, theta_idx]
+                
+    return cart_img

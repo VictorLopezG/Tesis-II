@@ -51,6 +51,17 @@ pc5=pca.fit_transform(img5)
 
 #print(f'U:{U1.shape} S:{S1.shape} V:{V1.shape}')
 
+k = 12 # Número de componentes principales a utilizar
+new_S = np.concatenate((S1[:k], S2[:k], S3[:k], S4[:k], S5[:k]))
+new_U = np.concatenate((U1[:, :k], U2[:, :k], U3[:, :k], U4[:, :k], U5[:, :k]), axis=1)
+new_V = np.concatenate((V1[:k, :], V2[:k, :], V3[:k, :], V4[:k, :], V5[:k, :]))
+
+print(new_U.shape,new_S.shape,new_V.shape)
+
+altS=np.concatenate((S1[:k], S2[:k], S3[:k], S4[:k], S5[:k]))
+altV=np.concatenate((U1[:, :k], U2[:, :k], U3[:, :k], U4[:, :k], U5[:, :k]), axis=1)
+altU=np.concatenate((V1[:k, :], V2[:k, :], V3[:k, :], V4[:k, :], V5[:k, :]))
+
 
 ############## valores propios
 ####imagen1
@@ -74,7 +85,6 @@ valores_propios5 = np.square(np.diag(S5))
 indices_no_nulos5 = np.nonzero(valores_propios5)
 valores_propios5_no_nulos5 = valores_propios5[indices_no_nulos5]
 
-print(pc1.shape)
 
 # Crea la imagen sintética combinando los componentes principales de las imágenes originales
 
@@ -101,15 +111,6 @@ impV.fit([V1.flatten(),V2.flatten(),V3.flatten(),V4.flatten(),V5.flatten()])
 impU= SimpleImputer(missing_values=np.nan, strategy='most_frequent')
 impU.fit([U1.flatten(),U2.flatten(),U3.flatten(),U4.flatten(),U5.flatten()])
 
-k = 12 # Número de componentes principales a utilizar
-new_S = np.concatenate((S1[:k], S2[:k], S3[:k], S4[:k], S5[:k]))
-new_U = np.concatenate((U1[:, :k], U2[:, :k], U3[:, :k], U4[:, :k], U5[:, :k]), axis=1)
-new_V = np.concatenate((V1[:k, :], V2[:k, :], V3[:k, :], V4[:k, :], V5[:k, :]))
-
-altS=np.concatenate((S1[:k], S2[:k], S3[:k], S4[:k], S5[:k]))
-altV=np.concatenate((U1[:, :k], U2[:, :k], U3[:, :k], U4[:, :k], U5[:, :k]), axis=1)
-altU=np.concatenate((V1[:k, :], V2[:k, :], V3[:k, :], V4[:k, :], V5[:k, :]))
-
 for i in range(k):
     j=random.randint(0,altS.shape[0]-1)
     altS[j]=np.nan
@@ -130,6 +131,7 @@ altU=impU.fit_transform(altU)
 imputed_img = np.dot(new_U, np.dot(np.diag(new_S), new_V))
 
 # Reconstruye la imagen sintética a partir de la nueva descomposición SVD
+
 synthetic_img = np.dot(new_U, np.dot(np.diag(new_S), new_V))
 Us,Ss,Vs=svd(synthetic_img)
 
