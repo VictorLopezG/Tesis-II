@@ -6,17 +6,22 @@ from os import path,listdir
 from Codificacion.metrics import euclideanDistance,hammingDistance
 import numpy as np
 
-COD='pca'
-CLST='ward'
+COD='gabor'
+CLST='avg'
 
 def joinTable(clusters:HDBSCAN|BisectingKMeans|KMeans|AgglomerativeClustering,ids:list):
 	table=[]
 	for ind in range(len(ids)):
 		table.append([clusters.labels_[ind],ids[ind],temps[ind]])
+		print(clusters.labels_[ind],ids[ind])
 	table.sort()
 	return table
 
 if __name__=='__main__':
+	dist=euclideanDistance
+	if COD=='gabor':
+		dist=hammingDistance
+
 	print("Registrando plantillas...")
 #leer imagenes
 	entrys=listdir("Images/")
@@ -44,32 +49,36 @@ if __name__=='__main__':
 	match CLST:
 		case 'k-means':
 			clusters=KMeans(n_clusters=3,random_state=0).fit(temps)
+			table=joinTable(clusters,ids)
+			res=searchCents("Images\\jpD2.bmp",COD,clusters,table,dist)
+			print(res)
+
 		case 'b-means':
 			clusters=BisectingKMeans(n_clusters=3,random_state=0).fit(temps)
+			table=joinTable(clusters,ids)
+			res=searchCents("Images\\jpD2.bmp",COD,clusters,table,dist)
+			print(res)
+		
 		case 'k-means++':
 			clusters=KMeans(n_clusters=3,random_state=0,init='k-means++').fit(temps)
+			table=joinTable(clusters,ids)
+			res=searchCents("Images\\jpD2.bmp",COD,clusters,table,dist)
+			print(res)
+		
 		case 'ward':
 			tree=AgglomerativeClustering(n_clusters=3,linkage='ward').fit(temps)
+			table=joinTable(tree,ids)
+			res =searchTree("Images\\100.bmp",COD,tree,table,dist)
+			print(res)
+
 		case 'avg':
 			tree=AgglomerativeClustering(n_clusters=3,linkage='average').fit(temps)
-		case 'dbscan':
-			db=HDBSCAN(min_samples=1, store_centers='centroid',copy=False).fit(temps)
-
-	# Busquedas con centroides
-	if CLST in ['k-means','b-means','k-means++']:
-		table=joinTable(clusters,ids)
-		res=searchCents("Images\\jpD2.bmp",COD,clusters,table,euclideanDistance)
-		print(res)
-
-	#Busqueda en arbol
-	if CLST in ['ward','avg']:
-		table=joinTable(tree,ids)
-		res =searchTree("Images\\100.bmp",COD,tree,table,euclideanDistance)
-		print(res)
-
-	#Busqueda en DBSCAN
-	if CLST=='hdbscan':
-		table= joinTable(db,ids)
-		print(table[0])
-		res= searchSCAN("Images\\100.bmp",COD,db,table,euclideanDistance)
-		print(res)
+			table=joinTable(tree,ids)
+			res =searchTree("Images\\20322376-50.bmp",COD,tree,table,dist)
+			print(res)
+		
+		case 'hdbscan':
+			db=HDBSCAN(min_samples=5, store_centers='centroid',copy=False).fit(temps)
+			table= joinTable(db,ids)
+			res= searchSCAN("Images\\gaboD2.bmp",COD,db,table,dist)
+			print(res)

@@ -83,7 +83,7 @@ latent = np.random.normal(0, 1, size=(n_samples, 3))
 data = latent @ np.random.uniform(0.5, 2.0, size=(3, n_features)) + np.random.normal(0, 0.1, size=(n_samples, n_features))
 
 df = pd.DataFrame(data, columns=[f'Feature_{i}' for i in range(n_features)])
-
+print(df.shape)
 # Introduce 20% Random Missing Values
 df_missing = df.copy()
 mask = np.random.rand(*df_missing.shape) < 0.20

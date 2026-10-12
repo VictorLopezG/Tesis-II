@@ -2,9 +2,10 @@ import os.path
 from cv2 import imread, imshow, waitKey
 from scipy.io import savemat
 from Codificacion.process import process_iris
-from sklearn.cluster import KMeans,BisectingKMeans,DBSCAN,AgglomerativeClustering
+from sklearn.cluster import KMeans,BisectingKMeans,AgglomerativeClustering
 from sklearn.cluster._hdbscan.hdbscan import HDBSCAN
 from sklearn.metrics import accuracy_score,precision_score,recall_score
+from time import time_ns,time
 import numpy as np
 
 thresholds={'pca':0.0028,'dct':0.03,'gabor':0.38,'dwt':0.0008}
@@ -33,31 +34,33 @@ def searchCents(im:str,cod:str,clusters:KMeans|BisectingKMeans,table:list, metri
         table: tabla en que se relaciona cada plantilla con su respectivo cluster e id
         metric: funcion de distancia para las comparaciones
     """
+    ini=time_ns()
     img=imread(im,0)
+    if img is None :return 'Imagen no valida',time()-ini
     #codificar
     temp,mask=process_iris(img,cod)
-
+    
     #identificar cluster en que deberia encontrarse
-    dist=0
-    idx=0
+    #dist=0
+    idx=clusters.predict([temp.flatten()])
+    '''
     for ind in range(len(clusters.cluster_centers_)):
         d=metric(clusters.cluster_centers_[ind],temp)
+        ##print(d)
         if d<dist or ind-1<0:
             idx=ind
             dist=d
-
+    '''
     #comparar con el cluster
-    dists=[]
+    #print(idx)
     for ind in range(len(table)):
         if table[ind][0]==idx:
-            dists.append([metric(temp,table[ind][2]),table[ind][1]])
+            d=metric(temp,table[ind][2])
+            ##print(d)
+            if d<=thresholds[cod]:
+                return table[ind][1],os.path.basename(im)[0:-4],d,time()-ini
 
-    dists.sort()
-
-    if dists[0][0]>thresholds[cod]:
-            return ['-1', -1]
-
-    return dists[0][1],dists[0][0]
+    return '-1',os.path.basename(im)[0:-4],-1,time()-ini
 
 def searchTree(im:str,cod:str,clusters:AgglomerativeClustering,table:list, metric):
     """Busqueda en clusteres formados con algoritmos basados en centroides
@@ -67,9 +70,12 @@ def searchTree(im:str,cod:str,clusters:AgglomerativeClustering,table:list, metri
         table: tabla en que se relaciona cada plantilla con su respectivo cluster e id
         metric: funcion de distancia para las comparaciones
     """
+    ini=time()
     img=imread(im,0)
+    if img is None :return 'Imagen no valida',time()-ini
     #codificar
     temp,mask=process_iris(img,cod)
+    
     #calcular centriodes
     dist=0
     idx=0
@@ -80,29 +86,29 @@ def searchTree(im:str,cod:str,clusters:AgglomerativeClustering,table:list, metri
                 cluster.append(entry[2])
         cent=calcCentroid(cluster)
         d=metric(cent,temp)
+        #print(d)
         if d<dist or i-1<0:
             idx=i
-            dist=d    
+            dist=d   
 
-    dists=[]
+    print(idx) 
 
     for ind in range(len(table)):
         if table[ind][0]==idx:
-            dists.append([metric(temp,table[ind][2]),table[ind][1]])
-    
-    dists.sort()
+            d=metric(temp,table[ind][2])
+            #print(d)
+            if d<=thresholds[cod]:
+                return table[ind][1],os.path.basename(im)[0:-4],d,time()-ini
 
-    if dists[0][0]>thresholds[cod]:
-            return ['-1', -1]
-
-    return dists[0][1],dists[0][0]
+    return '-1',os.path.basename(im)[0:-4],-1,time()-ini
 
 
 def searchSCAN(im:str,cod:str,db:HDBSCAN,table:list,metric):
+    ini=time()
     img=imread(im,0)
+    if img is None :return 'Imagen no valida',time()-ini
     #codificar
     temp,mask=process_iris(img,cod)
-
     dist=0
     idx=0
     for ind in range(len(db.centroids_)):
@@ -110,26 +116,23 @@ def searchSCAN(im:str,cod:str,db:HDBSCAN,table:list,metric):
         if d<dist or ind-1<0:
             idx=ind
             dist=d
-
+    print(idx)
     #comparar con el cluster
-    dists=[]
     for ind in range(len(table)):
         if table[ind][0]==idx:
-            dists.append([metric(temp,table[ind][2]),table[ind][1]])
-    dists.sort()
-
-    #Buscar dentro de los outliers si no se encuentra en los principales
-    if dists[0][0]>thresholds[cod]:
-        dists=[]
-        for ind in range(len(table)):
-            if table[ind][0]==-1:
-                dists.append([metric(temp,table[ind][2]),table[ind][1]])
-            else:
-                break
-
-    dists.sort()
-
-    if dists[0][0]>thresholds[cod]:
-        return ['-1', -1]
+            d=metric(temp,table[ind][2])
+            #print(d)
+            if d<=thresholds[cod]:
+                return table[ind][1],os.path.basename(im)[0:-4],d,time()-ini
     
-    return dists[0][1],dists[0][0]
+    #Buscar dentro de los outliers si no se encuentra en los principales
+    for ind in range(len(table)):
+        if table[ind][0]==-1:
+            d=metric(temp,table[ind][2])
+            #print(d)
+            if d<=thresholds[cod]:
+                return table[ind][1],os.path.basename(im)[0:-4],d,time()-ini
+        else:
+            break
+
+    return '-1',os.path.basename(im)[0:-4],-1,time()-ini

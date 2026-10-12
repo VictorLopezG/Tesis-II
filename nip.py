@@ -35,9 +35,6 @@ for i in range(n_dim):
     imputed.append(ImputedData[5])
     print(f'{i+1}/{n_dim}')
 
-
-
-
 nip.fit(ncomp=2,cv=True)
 
 nip.predict(pd.DataFrame(img2))
