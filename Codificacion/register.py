@@ -6,9 +6,10 @@ from sklearn.cluster import KMeans,BisectingKMeans,AgglomerativeClustering
 from sklearn.cluster._hdbscan.hdbscan import HDBSCAN
 from sklearn.metrics import accuracy_score,precision_score,recall_score
 from time import time_ns,time
+from Codificacion.metrics import euclideanDistance
 import numpy as np
 
-thresholds={'pca':0.0028,'dct':0.03,'gabor':0.38,'dwt':0.0008}
+thresholds={'pca':0.0028,'dct':0.03,'gabor':0.38,'gaborE':0.0025,'dwt':0.0008}
 
 def calcCentroid(cluster:list):
     """Calcular el centroide de un cluster"""
@@ -34,7 +35,7 @@ def searchCents(im:str,cod:str,clusters:KMeans|BisectingKMeans,table:list, metri
         table: tabla en que se relaciona cada plantilla con su respectivo cluster e id
         metric: funcion de distancia para las comparaciones
     """
-    ini=time_ns()
+    ini=time()
     img=imread(im,0)
     if img is None :return 'Imagen no valida',time()-ini
     #codificar
@@ -53,14 +54,16 @@ def searchCents(im:str,cod:str,clusters:KMeans|BisectingKMeans,table:list, metri
     '''
     #comparar con el cluster
     #print(idx)
+    comps=0
     for ind in range(len(table)):
         if table[ind][0]==idx:
             d=metric(temp,table[ind][2])
+            comps=comps+1
             ##print(d)
             if d<=thresholds[cod]:
-                return table[ind][1],os.path.basename(im)[0:-4],d,time()-ini
+                return table[ind][1],os.path.basename(im)[0:-4],d,time()-ini,comps
 
-    return '-1',os.path.basename(im)[0:-4],-1,time()-ini
+    return '-1',os.path.basename(im)[0:-4],-1,time()-ini,comps
 
 def searchTree(im:str,cod:str,clusters:AgglomerativeClustering,table:list, metric):
     """Busqueda en clusteres formados con algoritmos basados en centroides
@@ -91,16 +94,17 @@ def searchTree(im:str,cod:str,clusters:AgglomerativeClustering,table:list, metri
             idx=i
             dist=d   
 
-    print(idx) 
-
+    if cod=='gabor': cod='gaborE'
+    comps=0
     for ind in range(len(table)):
         if table[ind][0]==idx:
             d=metric(temp,table[ind][2])
             #print(d)
+            comsp=comps+1
             if d<=thresholds[cod]:
-                return table[ind][1],os.path.basename(im)[0:-4],d,time()-ini
+                return table[ind][1],os.path.basename(im)[0:-4],d,time()-ini,comps
 
-    return '-1',os.path.basename(im)[0:-4],-1,time()-ini
+    return '-1',os.path.basename(im)[0:-4],-1,time()-ini,comps
 
 
 def searchSCAN(im:str,cod:str,db:HDBSCAN,table:list,metric):
@@ -116,23 +120,26 @@ def searchSCAN(im:str,cod:str,db:HDBSCAN,table:list,metric):
         if d<dist or ind-1<0:
             idx=ind
             dist=d
-    print(idx)
+    #print(idx)
     #comparar con el cluster
+    comps=0
     for ind in range(len(table)):
         if table[ind][0]==idx:
             d=metric(temp,table[ind][2])
             #print(d)
+            comps=comps+1
             if d<=thresholds[cod]:
-                return table[ind][1],os.path.basename(im)[0:-4],d,time()-ini
+                return table[ind][1],os.path.basename(im)[0:-4],d,time()-ini,comps
     
     #Buscar dentro de los outliers si no se encuentra en los principales
     for ind in range(len(table)):
         if table[ind][0]==-1:
             d=metric(temp,table[ind][2])
             #print(d)
+            comps=comps+1
             if d<=thresholds[cod]:
-                return table[ind][1],os.path.basename(im)[0:-4],d,time()-ini
+                return table[ind][1],os.path.basename(im)[0:-4],d,time()-ini,comps
         else:
             break
 
-    return '-1',os.path.basename(im)[0:-4],-1,time()-ini
+    return '-1',os.path.basename(im)[0:-4],-1,time()-ini,comps+1

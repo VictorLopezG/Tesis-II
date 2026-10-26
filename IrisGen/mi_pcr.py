@@ -2,6 +2,10 @@ import numpy as np
 import pandas as pd
 from sklearn.decomposition import PCA
 from sklearn.linear_model import LinearRegression
+from Codificacion.process import normalizeIris
+from cv2 import imread, imshow, waitKey, imwrite
+from Segmentacion.normalize import rubber_sheet_inverse
+
 
 def mi_pcr_impute(X_miss, n_components=2, max_iter=10, random_state=42):
     """
@@ -76,22 +80,56 @@ def mi_pcr_impute(X_miss, n_components=2, max_iter=10, random_state=42):
         return pd.DataFrame(X_filled, columns=X_miss.columns, index=X_miss.index)
     return X_filled
 
+def mi_pcrGen(paths:list[str]):
+    
+    img1 = imread(paths[0],0)
+    img2 = imread(paths[1],0)
+    img3 = imread(paths[2],0)
+    img4 = imread(paths[3],0)
+    img5 = imread(paths[4],0)
+
+    img1,_=normalizeIris(img1)
+    img2,_=normalizeIris(img2)
+    img3,_=normalizeIris(img3)
+    img4,_=normalizeIris(img4)
+    img5,_=normalizeIris(img5)
+
+    new=[]
+    n_comp=2
+    for i in range(img1.shape[0]):
+        X=[img1[i],img2[i],img3[i],img4[i],img5[i],np.full(img1.shape[1],np.nan)]
+        imputed=mi_pcr_impute(X,n_components=n_comp,max_iter=5)
+        new.append(np.asarray(imputed[5]))
+
+    new=np.asarray(new)*255
+    return new
+
+"""
+img1 = imread("C:\\Users\\wings\\Documents\\Codigos\\Desarrrollo\\sistema_reconocimiento_iris\\CASIA\\TEST\\10\\010_1_3.jpg",0)
+img2 = imread("C:\\Users\\wings\\Documents\\Codigos\\Desarrrollo\\sistema_reconocimiento_iris\\CASIA\\TEST\\10\\010_2_3.jpg",0)
+img3 = imread("C:\\Users\\wings\\Documents\\Codigos\\Desarrrollo\\sistema_reconocimiento_iris\\CASIA\\TEST\\10\\010_2_4.jpg",0)
+img4 = imread("C:\\Users\\wings\\Documents\\Codigos\\Desarrrollo\\sistema_reconocimiento_iris\\CASIA\\TEST\\11\\011_1_3.jpg",0)
+img5 = imread("C:\\Users\\wings\\Documents\\Codigos\\Desarrrollo\\sistema_reconocimiento_iris\\CASIA\\TEST\\11\\011_2_3.jpg",0)
+
+img1,_=normalizeIris(img1)
+img2,_=normalizeIris(img2)
+img3,_=normalizeIris(img3)
+img4,_=normalizeIris(img4)
+img5,_=normalizeIris(img5)
 # --- Execution Test Block ---
-np.random.seed(42)
-n_samples, n_features = 100, 10
-latent = np.random.normal(0, 1, size=(n_samples, 3))
-data = latent @ np.random.uniform(0.5, 2.0, size=(3, n_features)) + np.random.normal(0, 0.1, size=(n_samples, n_features))
 
-df = pd.DataFrame(data, columns=[f'Feature_{i}' for i in range(n_features)])
-print(df.shape)
-# Introduce 20% Random Missing Values
-df_missing = df.copy()
-mask = np.random.rand(*df_missing.shape) < 0.20
-df_missing[mask] = np.nan
+new=[]
+n_comp=2
+for i in range(img1.shape[0]):
+    X=[img1[i],img2[i],img3[i],img4[i],img5[i],np.full(img1.shape[1],np.nan)]
+    imputed=mi_pcr_impute(X,n_components=n_comp,max_iter=5)
+    new.append(np.asarray(imputed[5]))
+    print(f'{i}/64')
 
-# Execute robust imputation code
-df_imputed = mi_pcr_impute(df_missing, n_components=2, max_iter=5)
+print(np.asarray(new).shape)
+circ= rubber_sheet_inverse(np.asarray(new),(290,320),50,200)
 
-print("Imputation completed successfully!")
-print(f"Remaining Missing Values: {df_imputed.isna().sum().sum()}")
-print("\nSample Output (First 3 rows, 4 columns):\n", df_imputed.iloc[:3, :4])
+new=np.asarray(new)*255
+imwrite(f"imputedImgs/mi-pcr-Circ{n_comp}.bmp",circ*255)
+imwrite(f"imputedImgs/mi-pcr-{n_comp}.bmp",new)
+"""

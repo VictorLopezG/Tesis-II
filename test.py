@@ -1,59 +1,122 @@
-from Codificacion.process import process_iris
-from cv2 import imread, imshow, waitKey, imwrite
-from os import path, listdir
-from Codificacion.register import register
-from Codificacion.process import process_iris
-from Codificacion.metrics import euclideanDistance, hammingDistance
 from scipy.io import loadmat
+from sklearn.cluster import KMeans, BisectingKMeans, AgglomerativeClustering
+from sklearn.cluster._hdbscan.hdbscan import HDBSCAN
+from Codificacion.register import register, searchCents, searchTree,searchSCAN
+from os import path,listdir
+from Codificacion.metrics import euclideanDistance,hammingDistance
+from sklearn.metrics import precision_score,recall_score,accuracy_score,f1_score
 
-codes=['gabor','dct','dwt','pca']
-thresholds={'pca':0.0028,'dct':0.03,'gabor':0.38,'dwt':0.0008}
+cods=['dct','dwt','gabor','pca']
+clsts=['k-means','b-means','k-means++','avg','ward','hdbscan']
+
+def joinTable(clusters:HDBSCAN|BisectingKMeans|KMeans|AgglomerativeClustering,ids:list,temps:list):
+	table=[]
+	for ind in range(len(ids)):
+		table.append([clusters.labels_[ind],ids[ind],temps[ind]])
+		#print(clusters.labels_[ind],ids[ind])
+	table.sort()
+	return table
+
+def registerDir(dir:str,code:str):
+	"""
+	Registra 1 de las imagenes de cada individuo y retorna el path de cada imagen registrada
+	"""
+	print(f"Registrando con codificacion {code}")
+	ids=listdir(dir)
+	paths=[]
+	y_true=[]
+	registered=listdir(path.join("Templates",COD))
+	for i in ids:
+		ims=listdir(f"{dir}/{i}/")
+		paths.append(f"{dir}/{i}/{ims[0]}")
+		y_true.append(i)
+		if ims[0][:-4]+'.mat' not in registered:
+			register(f"{dir}/{i}/{ims[0]}",code,i)
+	return paths,y_true
+
+def getTemplates(cod:str):
+	entrys=listdir(path.join("Templates",COD))
+	
+	temps=[]
+	ids=[]
+	
+	for temp in entrys:
+		template=loadmat(path.join("Templates",COD,temp))
+		ids.append(''.join(template['id']))
+		temps.append(template['template'].flatten())
+	return temps,ids
+
+def test(COD:str,CLST:str):
+	dist=euclideanDistance
+	if COD=='gabor':
+		dist=hammingDistance
+		#leer imagenes
+	regs,y_true =registerDir("C:\\Users\\wings\\Desktop\\CASIA\\TEST",COD)
+	
+		#leer plantillas
+	print("Leyendo plantillas...")
+	
+	temps,ids=getTemplates(COD)
+	
+	preds=[]
+		#crear clusters
+	print("Generando clusteres...")
+	match CLST:
+		case 'k-means':
+			clusters=KMeans(n_clusters=3,random_state=0).fit(temps)
+			table=joinTable(clusters,ids,temps)
+			print("Evaluando...")
+			for r in regs:
+				id,im,dis,time,comps=searchCents(r,COD,clusters,table,dist)
+				preds.append(id)
+				
+		case 'b-means':
+			clusters=BisectingKMeans(n_clusters=3,random_state=0).fit(temps)
+			table=joinTable(clusters,ids,temps)
+			print("Evaluando...")
+			for r in regs:
+				id,im,dis,time,comps=searchCents(r,COD,clusters,table,dist)
+				preds.append(id)
+		
+		case 'k-means++':
+			clusters=KMeans(n_clusters=3,random_state=0,init='k-means++').fit(temps)
+			table=joinTable(clusters,ids,temps)
+			print("Evaluando...")
+			for r in regs:
+				id,im,dis,time,comps=searchCents(r,COD,clusters,table,dist)
+				preds.append(id)
+		
+		case 'ward':
+			tree=AgglomerativeClustering(n_clusters=3,linkage='ward').fit(temps)
+			table=joinTable(tree,ids,temps)
+			print("Evaluando...")
+			for r in regs:
+				id,im,dis,time,comps=searchTree(r,COD,tree,table,dist)
+				preds.append(id)
+		
+		case 'avg':
+			tree=AgglomerativeClustering(n_clusters=3,linkage='average').fit(temps)
+			table=joinTable(tree,ids,temps)
+			print("Evaluando...")
+			for r in regs:
+				id,im,dis,time,comps=searchTree(r,COD,tree,table,dist)
+				preds.append(id)
+			
+		case 'hdbscan':
+			db=HDBSCAN(min_samples=5, store_centers='centroid',copy=False).fit(temps)
+			table= joinTable(db,ids,temps)
+			print("Evaluando...")
+			for r in regs:
+				id,im,dis,time,comps=searchSCAN(r,COD,db,table,dist)
+				preds.append(id)
+	return y_true,preds
 
 if __name__=='__main__':
-
-    imgs=listdir("Images/")
-
-    for COD in codes:
-        dist=euclideanDistance
-        if COD=='gabor':
-            dist=hammingDistance
-        resgistered=listdir(path.join("Templates",COD))
-
-        #registrar todo
-
-        for im in imgs:
-        #codificar imagenes
-            if im[:-4]+'.mat'not in resgistered:
-                register(path.join('Images',im),COD,im[:-4])
-
-        #cargar plantillas
-        print("Leyendo plantillas...")
-
-        entrys=listdir(path.join("Templates",COD))
-
-        temps=[]
-
-        for temp in entrys:
-            template=loadmat(path.join("Templates",COD,temp))
-            temps.append([template['template'],''.join(template['id'])])
-        #buscar dentro de la bd
-        results=[]
-        print(f"probando codificacion: {COD}")
-        for im in imgs:
-            print(im)
-            img=imread('Images/'+im,0)
-            for temp in temps:
-                enc,mask=process_iris(img,COD)
-                d=dist(enc,temp[0])
-                if d<thresholds[COD]:
-                    results.append([d,im,temp[1]])
-                    break
-
-        print(f"FN:{len(results)-len(imgs)}")
-        tp=0
-        for res in results:
-            if res[1][:-4]==res[2]:
-                tp=tp+1
-            else:
-                print(res)
-        print(f"TP:{tp/len(imgs)}")
+	for COD in cods:
+		for CLST in clsts:
+			y_true,preds=test(COD,CLST)
+			print(f"Resultados de {COD} indexado con {CLST}")
+			print(f"Acurracy:{accuracy_score(y_true,preds)}")
+			print(f"Prescision:{precision_score(y_true,preds,average='micro')}")
+			print(f"F1 score:{f1_score(y_true,preds,average='micro')}")
+			print(f"Recall:{recall_score(y_true,preds,average='micro')}")

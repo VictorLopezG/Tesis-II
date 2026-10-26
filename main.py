@@ -7,13 +7,13 @@ from Codificacion.metrics import euclideanDistance,hammingDistance
 import numpy as np
 
 COD='gabor'
-CLST='avg'
+CLST='hdbscan'
 
 def joinTable(clusters:HDBSCAN|BisectingKMeans|KMeans|AgglomerativeClustering,ids:list):
 	table=[]
 	for ind in range(len(ids)):
 		table.append([clusters.labels_[ind],ids[ind],temps[ind]])
-		print(clusters.labels_[ind],ids[ind])
+		#print(clusters.labels_[ind],ids[ind])
 	table.sort()
 	return table
 
@@ -68,13 +68,13 @@ if __name__=='__main__':
 		case 'ward':
 			tree=AgglomerativeClustering(n_clusters=3,linkage='ward').fit(temps)
 			table=joinTable(tree,ids)
-			res =searchTree("Images\\100.bmp",COD,tree,table,dist)
+			res =searchTree("Images\\Bastian4.bmp",COD,tree,table,euclideanDistance)
 			print(res)
 
 		case 'avg':
 			tree=AgglomerativeClustering(n_clusters=3,linkage='average').fit(temps)
 			table=joinTable(tree,ids)
-			res =searchTree("Images\\20322376-50.bmp",COD,tree,table,dist)
+			res =searchTree("Images\\20322376-54.bmp",COD,tree,table,euclideanDistance)
 			print(res)
 		
 		case 'hdbscan':
