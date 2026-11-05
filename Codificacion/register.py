@@ -44,26 +44,26 @@ def searchCents(im:str,cod:str,clusters:KMeans|BisectingKMeans,table:list, metri
     #identificar cluster en que deberia encontrarse
     #dist=0
     idx=clusters.predict([temp.flatten()])
-    '''
+    """
+    print(idx)
     for ind in range(len(clusters.cluster_centers_)):
         d=metric(clusters.cluster_centers_[ind],temp)
         ##print(d)
         if d<dist or ind-1<0:
             idx=ind
             dist=d
-    '''
     #comparar con el cluster
-    #print(idx)
+    print(idx)
+    """
     comps=0
     for ind in range(len(table)):
         if table[ind][0]==idx:
             d=metric(temp,table[ind][2])
             comps=comps+1
-            ##print(d)
             if d<=thresholds[cod]:
                 return table[ind][1],os.path.basename(im)[0:-4],d,time()-ini,comps
 
-    return '-1',os.path.basename(im)[0:-4],-1,time()-ini,comps
+    return '-1',os.path.basename(im)[0:-4],d,time()-ini,comps
 
 def searchTree(im:str,cod:str,clusters:AgglomerativeClustering,table:list, metric):
     """Busqueda en clusteres formados con algoritmos basados en centroides
