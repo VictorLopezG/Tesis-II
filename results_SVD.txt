@@ -1,1 +1,0 @@
-Cluster_type	Cod	Acc	Pres	F1	Rec	AvgT	Sil

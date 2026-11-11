@@ -6,3 +6,5 @@ Images/
 *.ipynb
 __pycache__/
 CasiaT/
+results/
+combs/
