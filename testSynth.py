@@ -2,14 +2,14 @@ from scipy.io import loadmat
 from sklearn.cluster import KMeans, BisectingKMeans, AgglomerativeClustering
 from sklearn.cluster._hdbscan.hdbscan import HDBSCAN
 from Codificacion.register import register, searchCents, searchTree,searchSCAN
-from os import path,listdir
+from os import path,listdir,remove
 from Codificacion.metrics import euclideanDistance,hammingDistance
 from sklearn.metrics import precision_score,recall_score,accuracy_score,f1_score,silhouette_score
 import numpy as np
 
 cods=['dct','dwt','gabor','pca']
 clsts=['k-means','b-means','k-means++','avg','ward','hdbscan']
-synths=['PCA','SVD','MI_PCR']
+synths=['IrisSint','PCA','SVD','MI_PCR']
 
 def joinTable(clusters:HDBSCAN|BisectingKMeans|KMeans|AgglomerativeClustering,ids:list,temps:list):
 	table=[]
@@ -45,6 +45,8 @@ def registerSynth(dir:str,code:str,overwrite=False):
 	paths=[]
 	y_true=[]
 	registered=listdir(path.join("Templates",COD))
+	if overwrite:
+		for r in registered: remove(path.join("Templates",COD,r))
 	for i in ids:
 		if i[0]!="C":
 			continue
@@ -85,7 +87,7 @@ def test(COD:str,CLST:str,IMP:str):
 	print("Generando clusteres...")
 	match CLST:
 		case 'k-means':
-			clusters=KMeans(n_clusters=3,random_state=0,verbose=True).fit(temps)
+			clusters=KMeans(n_clusters=3,random_state=0).fit(temps)
 			table=joinTable(clusters,ids,temps)
 			print("Evaluando...")
 			for r in regs:
@@ -96,7 +98,7 @@ def test(COD:str,CLST:str,IMP:str):
 			sil=silhouette_score(temps,clusters.labels_)
 
 		case 'b-means':
-			clusters=BisectingKMeans(n_clusters=3,random_state=0,verbose=True).fit(temps)
+			clusters=BisectingKMeans(n_clusters=3,random_state=0).fit(temps)
 			table=joinTable(clusters,ids,temps)
 			print("Evaluando...")
 			for r in regs:
@@ -106,7 +108,7 @@ def test(COD:str,CLST:str,IMP:str):
 			sil=silhouette_score(temps,clusters.labels_)
 
 		case 'k-means++':
-			clusters=KMeans(n_clusters=3,random_state=0,init='k-means++',verbose=True).fit(temps)
+			clusters=KMeans(n_clusters=3,random_state=0,init='k-means++').fit(temps)
 			table=joinTable(clusters,ids,temps)
 			print("Evaluando...")
 			for r in regs:
@@ -153,7 +155,7 @@ if __name__=='__main__':
 			f.write(f"Cluster_type\tCod\tAcc\tPres\tF1\tRec\tAvgT\tSil\n")
 			f.close()
 		for COD in cods:
-			print("registrando")
+			#print("registrando")
 			registerSynth(f"imputedImgs\\{IMP}",COD,True)
 			for CLST in clsts:
 				y_true,preds,sil,avg_t=test(COD,CLST,IMP)
@@ -168,6 +170,6 @@ if __name__=='__main__':
 				print(f"Recall:{rec}")
 				print(f"Tiempo medio de respuesta:{avg_t}")
 				print(f"Silhouette score:{sil}")
-				f=open(f"results_{IMP}.txt", "a")
+				f=open(f"results/results_{IMP}.txt", "a")
 				f.write("{:}\t{:}\t{:.4f}\t{:.4f}\t{:.4f}\t{:.4f}\t{:.4f}\t{:.4f}\n".format(CLST,COD,acc,pres,f1,rec,avg_t,sil))
 				f.close()

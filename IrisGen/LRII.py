@@ -9,13 +9,22 @@ from sklearn.decomposition import PCA
 from Codificacion.process import normalizeIris
 from Segmentacion.normalize import rubber_sheet_inverse
 
-def PCAGen(paths:list[str]):
-    img1 = imread(paths[0],0)
-    img2 = imread(paths[1],0)
-    img3 = imread(paths[2],0)
-    img4 = imread(paths[3],0)
-    img5 = imread(paths[4],0)
-
+def PCAGen(paths:list[str]=None,imgs:list=None):
+    if len(imgs)>=5 and paths==None:
+        img1=imgs[0]
+        img2=imgs[1]
+        img3=imgs[2]
+        img4=imgs[3]
+        img5=imgs[4]
+    elif len(paths)>=5:
+        img1 = imread(paths[0],0)
+        img2 = imread(paths[1],0)
+        img3 = imread(paths[2],0)
+        img4 = imread(paths[3],0)
+        img5 = imread(paths[4],0)
+    else:
+        return 0
+    
     n_dim=64
 
     img1,_=normalizeIris(img1)

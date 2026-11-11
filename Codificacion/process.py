@@ -25,3 +25,15 @@ def process_iris(img,cod:str):
         case "pca":
             temp,mask=pca.prCoAn(polar_array)
     return temp, mask
+
+def process_norm_iris(img,cod:str):
+    match cod:
+        case "dct":
+            temp, mask=dct.extractFeature_dct(img)
+        case "dwt":
+            temp,mask=dwt.DWT(img)
+        case "gabor":
+            temp, mask=gabor.extractFeature_gabor(img)
+        case "pca":
+            temp,mask=pca.prCoAn(img)
+    return temp, mask

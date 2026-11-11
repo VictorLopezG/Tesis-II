@@ -1,12 +1,10 @@
 import os.path
-from cv2 import imread, imshow, waitKey
+from cv2 import imread,resize
 from scipy.io import savemat
-from Codificacion.process import process_iris
+from Codificacion.process import process_iris,process_norm_iris
 from sklearn.cluster import KMeans,BisectingKMeans,AgglomerativeClustering
 from sklearn.cluster._hdbscan.hdbscan import HDBSCAN
-from sklearn.metrics import accuracy_score,precision_score,recall_score
-from time import time_ns,time
-from Codificacion.metrics import euclideanDistance
+from time import time
 import numpy as np
 
 thresholds={'pca':0.0028,'dct':0.03,'gabor':0.38,'gaborE':0.0025,'dwt':0.0008}
@@ -19,10 +17,13 @@ def calcCentroid(cluster:list):
     return suma
 
 
-def register(im:str,cod:str,id:str):
+def register(im:str,cod:str,id:str, norm:bool=False):
     img = imread(im, 0)
-
-    temp,mask=process_iris(img,cod)
+    if norm:
+        img.resize((64,512))
+        temp,mask=process_norm_iris(img,cod)
+    else:
+        temp,mask=process_iris(img,cod)
 
     out_file = os.path.join(f'Templates/{cod}', f"{os.path.basename(im)[0:-4]}.mat")
     savemat(out_file, mdict={'id': id, 'template': temp, 'mask': mask})
