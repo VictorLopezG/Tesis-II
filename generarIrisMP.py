@@ -7,7 +7,7 @@ from Segmentacion.normalize import rubber_sheet_inverse
 from multiprocessing import Process
 import numpy as np
 
-basePath="C:\\Users\\wings\\Desktop\\CASIA\\TEST"
+basePath="CASIA\\TEST"
 '''
 def validateComb(comps:list):
     for comb in combinaciones:
@@ -42,22 +42,18 @@ def generarLote(cod:str,combinaciones:list,imgs:list):
                 new=mi_pcrGen(imgs=ims)
             case 'SVD':
                 new=SVDGen(imgs=ims)
-        circ= rubber_sheet_inverse(np.asarray(new),(290,320),50,200)
+        #circ= rubber_sheet_inverse(np.asarray(new),(290,320),50,200)
         name=f"{a}_{b}_{c}_{d}_{e}.jpg"
         imwrite(f"imputedImgs/{cod}/{name}",new)
-        imwrite(f"imputedImgs/{cod}/C{name}",circ)
-        
+        #imwrite(f"imputedImgs/{cod}/C{name}",circ)
 
-if __name__=="__main__":
+def generar(cod:str,n_threads:int,cant:int):
     combinaciones=[]
     imgs=loadImgs(basePath)
     try:
         print("Cargando imagenes de base")
-        f=open("validas.txt","r")
-        n_threads=4
-        cant=108
+        f=open("combs/validas.txt","r")
         k=0
-        cod='MI_PCR'
         print("Cargando combinatorias")
         for line in f:
             a=line[:3]
@@ -79,3 +75,10 @@ if __name__=="__main__":
         for h in hilos: h.join()
     except Exception as e:
         print(e)
+
+if __name__=="__main__":
+    cods=['PCA','SVD','MI_PCR']
+    hilos=10
+    cant=108
+    for cod in cods:
+        generar(cod,hilos,cant)
