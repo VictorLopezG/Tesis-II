@@ -13,9 +13,9 @@ typedef struct comb
     int ids[5];
 } COMB;
 
-vector<COMB> base;
-vector<COMB> combs;
-vector<COMB> invalid;
+vector<COMB> base=vector<COMB>();
+vector<COMB> combs=vector<COMB>();
+vector<COMB> invalid=vector<COMB>();
 
 mutex addLock;
 mutex invLock;
@@ -47,13 +47,13 @@ void check(int ini, int fin)
     int k=ini;
     for(int i=ini;i<fin;i++){
         if(validate(base.at(i))){
-            addLock.lock();
+            //addLock.lock();
             combs.push_back(base.at(i));
-            addLock.unlock();
+            //addLock.unlock();
         }else{
-            invLock.lock();
+            //invLock.lock();
             invalid.push_back(base.at(i));
-            invLock.unlock();
+            //invLock.unlock();
         }
         if(k-i>1000){
             printf("Hebra %d +1000 revisiones\n",this_thread::get_id());
@@ -67,8 +67,8 @@ int main()
 {
     const char *path = "C:\\Users\\wings\\Documents\\NetBeansProjects\\Combinatorias\\Combinatoria.txt";
     FILE *arch = fopen(path, "r");
-    int nThreads = 4;
-    int i,cant=1000, k=0;
+    int nThreads = 10;
+    int i,cant=3000000, k=0;
     while(!feof(arch)&&k<cant*2){
         COMB c;
         char s[15];
@@ -85,7 +85,7 @@ int main()
     }
     printf("%d Combinaciones registradas.\n",base.size());
     fclose(arch);
-    
+    /*
     #pragma omp parallel num_threads(nThreads)
     {
     #pragma omp for private(i) schedule(runtime)    
@@ -98,15 +98,17 @@ int main()
         }
     }
     }
-    
-    /*
-    thread *hilos[nThreads];
+    */
+
+    vector <thread> hilos=vector<thread>();
     for(int i=0;i<nThreads;i++ ){
-        hilos[i]=new thread(check,(int)i*(base.size()/nThreads),(int)(i+1)*(base.size()/nThreads));
+        hilos.emplace_back( thread(check,(int)i*(base.size()/nThreads),(int)(i+1)*(base.size()/nThreads)));
     }
-    for(thread * h: hilos){
-        h->join();
-    }*/
+    for(auto &h:hilos){
+        if(h.joinable())
+            h.join();
+    }
+
     printf("Escribiendo combinatorias invalidas\n");
     arch=fopen("invalidas.txt","w");
     for(COMB in:invalid){

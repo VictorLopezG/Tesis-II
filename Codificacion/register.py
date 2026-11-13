@@ -20,7 +20,6 @@ def calcCentroid(cluster:list):
 def register(im:str,cod:str,id:str, norm:bool=False):
     img = imread(im, 0)
     if norm:
-        img.resize((64,512))
         temp,mask=process_norm_iris(img,cod)
     else:
         temp,mask=process_iris(img,cod)
@@ -28,7 +27,7 @@ def register(im:str,cod:str,id:str, norm:bool=False):
     out_file = os.path.join(f'Templates/{cod}', f"{os.path.basename(im)[0:-4]}.mat")
     savemat(out_file, mdict={'id': id, 'template': temp, 'mask': mask})
 
-def searchCents(im:str,cod:str,clusters:KMeans|BisectingKMeans,table:list, metric):
+def searchCents(im:str,cod:str,clusters:KMeans|BisectingKMeans,table:list, metric,norm:bool=False):
     """Busqueda en clusteres formados con algoritmos basados en centroides
         im: ruta a la imagen
         cod: codificacion que se uilizo en los clusteres
@@ -39,9 +38,10 @@ def searchCents(im:str,cod:str,clusters:KMeans|BisectingKMeans,table:list, metri
     ini=time()
     img=imread(im,0)
     if img is None :return 'Imagen no valida',time()-ini
-    #codificar
-    temp,mask=process_iris(img,cod)
-    
+    if norm:
+        temp,mask=process_norm_iris(img,cod)
+    else:
+        temp,mask=process_iris(img,cod)
     #identificar cluster en que deberia encontrarse
     #dist=0
     idx=clusters.predict([temp.flatten()])
@@ -66,7 +66,7 @@ def searchCents(im:str,cod:str,clusters:KMeans|BisectingKMeans,table:list, metri
 
     return '-1',os.path.basename(im)[0:-4],d,time()-ini,comps
 
-def searchTree(im:str,cod:str,clusters:AgglomerativeClustering,table:list, metric):
+def searchTree(im:str,cod:str,clusters:AgglomerativeClustering,table:list, metric,norm:bool=False):
     """Busqueda en clusteres formados con algoritmos basados en centroides
         im: ruta a la imagen
         cod: codificacion que se uilizo en los clusteres
@@ -77,8 +77,10 @@ def searchTree(im:str,cod:str,clusters:AgglomerativeClustering,table:list, metri
     ini=time()
     img=imread(im,0)
     if img is None :return 'Imagen no valida',time()-ini
-    #codificar
-    temp,mask=process_iris(img,cod)
+    if norm:
+        temp,mask=process_norm_iris(img,cod)
+    else:
+        temp,mask=process_iris(img,cod)
     
     #calcular centriodes
     dist=0
@@ -108,12 +110,15 @@ def searchTree(im:str,cod:str,clusters:AgglomerativeClustering,table:list, metri
     return '-1',os.path.basename(im)[0:-4],-1,time()-ini,comps
 
 
-def searchSCAN(im:str,cod:str,db:HDBSCAN,table:list,metric):
+def searchSCAN(im:str,cod:str,db:HDBSCAN,table:list,metric,norm:bool=False):
     ini=time()
     img=imread(im,0)
     if img is None :return 'Imagen no valida',time()-ini
     #codificar
-    temp,mask=process_iris(img,cod)
+    if norm:
+        temp,mask=process_norm_iris(img,cod)
+    else:
+        temp,mask=process_iris(img,cod)
     dist=0
     idx=0
     for ind in range(len(db.centroids_)):

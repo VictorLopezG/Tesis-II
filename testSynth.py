@@ -6,10 +6,10 @@ from os import path,listdir,remove
 from Codificacion.metrics import euclideanDistance,hammingDistance
 from sklearn.metrics import precision_score,recall_score,accuracy_score,f1_score,silhouette_score
 import numpy as np
-
+#"k-means","k-means++","b-means","avg","ward"
 cods=['dct','dwt','gabor','pca']
-clsts=['k-means','b-means','k-means++','avg','ward','hdbscan']
-synths=['IrisSint','PCA','SVD','MI_PCR']
+clsts=["k-means","k-means++","b-means","avg","ward",'hdbscan']
+synths=['PCA','IrisSint','SVD','MI_PCR']
 
 def joinTable(clusters:HDBSCAN|BisectingKMeans|KMeans|AgglomerativeClustering,ids:list,temps:list):
 	table=[]
@@ -40,7 +40,6 @@ def registerSynth(dir:str,code:str,overwrite=False):
 	"""
 	Registra las imagenes sinteticas y retorna el path de cada imagen registrada y su id
 	""" 
-	print(f"Registrando con codificacion {code}")
 	ids=listdir(dir)
 	paths=[]
 	y_true=[]
@@ -53,8 +52,7 @@ def registerSynth(dir:str,code:str,overwrite=False):
 		paths.append(f"{dir}/{i}")
 		y_true.append(i[:-4])
 		if i[:-4]+'.mat' not in registered or overwrite:
-			register(f"{dir}/{i}",code,i[:-4])
-		#print(y_true)
+			register(f"{dir}/{i}",code,i[:-4],False)
 	return paths,y_true
 
 def getTemplates(cod:str):
@@ -69,7 +67,7 @@ def getTemplates(cod:str):
 		temps.append(template['template'].flatten())
 	return temps,ids
 
-def test(COD:str,CLST:str,IMP:str):
+def test(COD:str,CLST:str,IMP:str,norm:bool=False):
 	dist=euclideanDistance
 	if COD=='gabor':
 		dist=hammingDistance
@@ -92,7 +90,7 @@ def test(COD:str,CLST:str,IMP:str):
 			print("Evaluando...")
 			for r in regs:
 				#print(r)
-				id,im,dis,time,comps=searchCents(r,COD,clusters,table,dist)
+				id,im,dis,time,comps=searchCents(r,COD,clusters,table,dist,norm)
 				t_scores.append(time)
 				preds.append(id)
 			sil=silhouette_score(temps,clusters.labels_)
@@ -102,7 +100,7 @@ def test(COD:str,CLST:str,IMP:str):
 			table=joinTable(clusters,ids,temps)
 			print("Evaluando...")
 			for r in regs:
-				id,im,dis,time,comps=searchCents(r,COD,clusters,table,dist)
+				id,im,dis,time,comps=searchCents(r,COD,clusters,table,dist,norm)
 				t_scores.append(time)
 				preds.append(id)
 			sil=silhouette_score(temps,clusters.labels_)
@@ -112,7 +110,7 @@ def test(COD:str,CLST:str,IMP:str):
 			table=joinTable(clusters,ids,temps)
 			print("Evaluando...")
 			for r in regs:
-				id,im,dis,time,comps=searchCents(r,COD,clusters,table,dist)
+				id,im,dis,time,comps=searchCents(r,COD,clusters,table,dist,norm)
 				t_scores.append(time)
 				preds.append(id)
 			sil=silhouette_score(temps,clusters.labels_)
@@ -122,7 +120,7 @@ def test(COD:str,CLST:str,IMP:str):
 			table=joinTable(tree,ids,temps)
 			print("Evaluando...")
 			for r in regs:
-				id,im,dis,time,comps=searchTree(r,COD,tree,table,euclideanDistance)
+				id,im,dis,time,comps=searchTree(r,COD,tree,table,euclideanDistance,norm)
 				t_scores.append(time)
 				preds.append(id)
 			sil=silhouette_score(temps,tree.labels_)
@@ -132,30 +130,38 @@ def test(COD:str,CLST:str,IMP:str):
 			table=joinTable(tree,ids,temps)
 			print("Evaluando...")
 			for r in regs:
-				id,im,dis,time,comps=searchTree(r,COD,tree,table,euclideanDistance)
+				id,im,dis,time,comps=searchTree(r,COD,tree,table,euclideanDistance,norm)
 				t_scores.append(time)
 				preds.append(id)
 			sil=silhouette_score(temps,tree.labels_)
 			
 		case 'hdbscan':
-			db=HDBSCAN(min_cluster_size=3,max_cluster_size=35, store_centers='centroid',copy=False).fit(temps)
+			db=HDBSCAN(min_cluster_size=3,max_cluster_size=35, store_centers='centroid',copy=False,allow_single_cluster=False).fit(temps)
 			table= joinTable(db,ids,temps)
 			print("Evaluando...")
 			for r in regs:
-				id,im,dis,time,comps=searchSCAN(r,COD,db,table,dist)
+				id,im,dis,time,comps=searchSCAN(r,COD,db,table,dist,norm)
 				t_scores.append(time)
 				preds.append(id)
-			sil=silhouette_score(temps,db.labels_)
+			ll=1
+			for l in db.labels_:
+				if l!=-1:
+					ll=ll+1
+					break
+			if ll>1:
+				sil=silhouette_score(temps,db.labels_)
+			else:
+				sil=-1
 	avg_t=np.sum(t_scores)/len(t_scores)
 	return y_true,preds,sil,avg_t
 
 if __name__=='__main__':
 	for IMP in synths:
-		with open(f"results_{IMP}.txt", "w") as f:
+		with open(f"results/results_{IMP}.txt", "w") as f:
 			f.write(f"Cluster_type\tCod\tAcc\tPres\tF1\tRec\tAvgT\tSil\n")
 			f.close()
 		for COD in cods:
-			#print("registrando")
+			print("registrando")
 			registerSynth(f"imputedImgs\\{IMP}",COD,True)
 			for CLST in clsts:
 				y_true,preds,sil,avg_t=test(COD,CLST,IMP)
@@ -163,13 +169,8 @@ if __name__=='__main__':
 				pres=precision_score(y_true,preds,average='micro')
 				f1=f1_score(y_true,preds,average='micro')
 				rec=recall_score(y_true,preds,average='micro')
-				print(f"Resultados de {COD} indexado con {CLST}")
-				print(f"Acurracy:{acc}")
-				print(f"Prescision:{pres}")
-				print(f"F1 score:{f1}")
-				print(f"Recall:{rec}")
-				print(f"Tiempo medio de respuesta:{avg_t}")
-				print(f"Silhouette score:{sil}")
+				print(f"Resultados de {IMP} con codificacion {COD} indexado con {CLST}")
+				print(f"Acc:{acc}, TR:{avg_t}, SS:{sil}")
 				f=open(f"results/results_{IMP}.txt", "a")
 				f.write("{:}\t{:}\t{:.4f}\t{:.4f}\t{:.4f}\t{:.4f}\t{:.4f}\t{:.4f}\n".format(CLST,COD,acc,pres,f1,rec,avg_t,sil))
 				f.close()
