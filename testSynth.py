@@ -161,7 +161,7 @@ if __name__=='__main__':
 			f.write(f"Cluster_type\tCod\tAcc\tPres\tF1\tRec\tAvgT\tSil\n")
 			f.close()
 		for COD in cods:
-			print("registrando")
+			print(f"Registrando {IMP} con {COD}")
 			registerSynth(f"imputedImgs\\{IMP}",COD,True)
 			for CLST in clsts:
 				y_true,preds,sil,avg_t=test(COD,CLST,IMP)
