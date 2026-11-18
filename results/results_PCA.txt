@@ -1,2 +1,1 @@
 Cluster_type	Cod	Acc	Pres	F1	Rec	AvgT	Sil
-k-means	dct	1.0000	1.0000	1.0000	1.0000	0.3062	0.0851

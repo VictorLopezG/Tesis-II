@@ -7,7 +7,7 @@ from Codificacion.metrics import euclideanDistance,hammingDistance
 from sklearn.metrics import precision_score,recall_score,accuracy_score,f1_score,silhouette_score
 import numpy as np
 #"k-means","k-means++","b-means","avg","ward"
-cods=['dct','dwt','gabor','pca']
+cods=['pca']
 clsts=["k-means","k-means++","b-means","avg","ward",'hdbscan']
 synths=['PCA','IrisSint','SVD','MI_PCR']
 
@@ -47,12 +47,12 @@ def registerSynth(dir:str,code:str,overwrite=False):
 	if overwrite:
 		for r in registered: remove(path.join("Templates",code,r))
 	for i in ids:
-		if i[0]!="C":
+		if i[0]=="C":
 			continue
 		paths.append(f"{dir}/{i}")
 		y_true.append(i[:-4])
 		if i[:-4]+'.mat' not in registered or overwrite:
-			register(f"{dir}/{i}",code,i[:-4],False)
+			register(f"{dir}/{i}",code,i[:-4],True)
 	return paths,y_true
 
 def getTemplates(cod:str):

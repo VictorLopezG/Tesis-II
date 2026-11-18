@@ -47,7 +47,7 @@ def generarLote(cod:str,combinaciones:list,imgs:list):
         imwrite(f"imputedImgs/{cod}/{name}",new)
         #imwrite(f"imputedImgs/{cod}/C{name}",circ)
 
-def generar(cod:str,n_threads:int,cant:int):
+def generar(cod:str,n_threads:int,cant:int,ini:int=0):
     combinaciones=[]
     imgs=loadImgs(basePath)
     try:
@@ -56,6 +56,9 @@ def generar(cod:str,n_threads:int,cant:int):
         k=0
         print("Cargando combinatorias")
         for line in f:
+            k=k+1
+            if k<=ini:
+                continue
             a=line[:3]
             b=line[3:6]
             c=line[6:9]
@@ -78,7 +81,7 @@ def generar(cod:str,n_threads:int,cant:int):
 
 if __name__=="__main__":
     cods=['PCA','SVD','MI_PCR']
-    hilos=10
-    cant=108
+    hilos=48
+    cant=6000
     for cod in cods:
-        generar(cod,hilos,cant)
+        generar(cod,hilos,cant,108)
