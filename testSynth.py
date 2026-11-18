@@ -43,9 +43,9 @@ def registerSynth(dir:str,code:str,overwrite=False):
 	ids=listdir(dir)
 	paths=[]
 	y_true=[]
-	registered=listdir(path.join("Templates",COD))
+	registered=listdir(path.join("Templates",code))
 	if overwrite:
-		for r in registered: remove(path.join("Templates",COD,r))
+		for r in registered: remove(path.join("Templates",code,r))
 	for i in ids:
 		if i[0]!="C":
 			continue
@@ -56,13 +56,13 @@ def registerSynth(dir:str,code:str,overwrite=False):
 	return paths,y_true
 
 def getTemplates(cod:str):
-	entrys=listdir(path.join("Templates",COD))
+	entrys=listdir(path.join("Templates",cod))
 	
 	temps=[]
 	ids=[]
 	
 	for temp in entrys:
-		template=loadmat(path.join("Templates",COD,temp))
+		template=loadmat(path.join("Templates",cod,temp))
 		ids.append(''.join(template['id']))
 		temps.append(template['template'].flatten())
 	return temps,ids
