@@ -4,14 +4,17 @@ from sklearn.cluster._hdbscan.hdbscan import HDBSCAN
 from Codificacion.register import register, searchCents, searchTree,searchSCAN
 from os import path,listdir,remove
 from Codificacion.metrics import euclideanDistance,hammingDistance
-from sklearn.metrics import precision_score,recall_score,accuracy_score,f1_score,silhouette_score
+from sklearn.metrics import precision_score,recall_score,accuracy_score,f1_score,silhouette_score,adjusted_rand_score#solo para casia
 import numpy as np
+from scipy.stats import ttest_ind #ttestindicator
 #"k-means","k-means++","b-means","avg","ward"
-cods=['pca']
-clsts=["k-means","k-means++","b-means","avg","ward",'hdbscan']
-synths=['PCA','IrisSint','SVD','MI_PCR']
+#'PCA','SVD','MI_PCR'
+cods=['pca','gabor']
+clsts=["k-means++"]
+synths=['PCA']
 
 def joinTable(clusters:HDBSCAN|BisectingKMeans|KMeans|AgglomerativeClustering,ids:list,temps:list):
+	"""Crea una tabla de indices bsada en las etiquetas obtenidas del algortimo de clustering"""
 	table=[]
 	for ind in range(len(ids)):
 		table.append([clusters.labels_[ind],ids[ind],temps[ind]])
@@ -36,7 +39,7 @@ def registerDir(dir:str,code:str):
 			register(f"{dir}/{i}/{ims[0]}",code,i)
 	return paths,y_true
 
-def registerSynth(dir:str,code:str,overwrite=False):
+def registerSynth(dir:str,code:str,overwrite=False,norm:bool=False):
 	"""
 	Registra las imagenes sinteticas y retorna el path de cada imagen registrada y su id
 	""" 
@@ -47,12 +50,10 @@ def registerSynth(dir:str,code:str,overwrite=False):
 	if overwrite:
 		for r in registered: remove(path.join("Templates",code,r))
 	for i in ids:
-		if i[0]=="C":
-			continue
 		paths.append(f"{dir}/{i}")
 		y_true.append(i[:-4])
 		if i[:-4]+'.mat' not in registered or overwrite:
-			register(f"{dir}/{i}",code,i[:-4],True)
+			register(f"{dir}/{i}",code,i[:-4],norm)
 	return paths,y_true
 
 def getTemplates(cod:str):
@@ -72,8 +73,7 @@ def test(COD:str,CLST:str,IMP:str,norm:bool=False):
 	if COD=='gabor':
 		dist=hammingDistance
 		#leer imagenes
-	#regs,y_true =registerDir("C:\\Users\\wings\\Desktop\\CASIA\\TEST",COD)
-	regs,y_true =registerSynth(f"imputedImgs\\{IMP}",COD)
+	regs,y_true =registerSynth(f"imputedImgs\\{IMP}",COD,norm=norm)
 		#leer plantillas
 	print("Leyendo plantillas...")
 	
@@ -162,9 +162,9 @@ if __name__=='__main__':
 			f.close()
 		for COD in cods:
 			print(f"Registrando {IMP} con {COD}")
-			registerSynth(f"imputedImgs\\{IMP}",COD,True)
+			registerSynth(f"imputedImgs/Circs/{IMP}",COD,True,True)
 			for CLST in clsts:
-				y_true,preds,sil,avg_t=test(COD,CLST,IMP)
+				y_true,preds,sil,avg_t=test(COD,CLST,IMP,True)
 				acc=accuracy_score(y_true,preds)
 				pres=precision_score(y_true,preds,average='micro')
 				f1=f1_score(y_true,preds,average='micro')

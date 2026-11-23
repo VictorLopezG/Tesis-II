@@ -43,6 +43,7 @@ def segment(eyeim, eyelashes_thres=80, use_multiprocess=False):
 	icl = np.round(col - r).astype(int)
 	icu = np.round(col + r).astype(int)
 	#cv2.imshow("a",eyeim[irl:iru,icl:icu])
+	#cv2.waitKey()
 	if irl < 0:
 		irl = 0
 	if icl < 0:
@@ -53,6 +54,7 @@ def segment(eyeim, eyelashes_thres=80, use_multiprocess=False):
 		icu = imsz[1] - 1
 	imageiris = eyeim[irl: iru + 1, icl: icu + 1]
 	#cv2.imshow("a",imageiris)
+	#cv2.waitKey()
 	# If use_multiprocess
 	if use_multiprocess:
 		ret_top = mp.Manager().dict()

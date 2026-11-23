@@ -1,7 +1,7 @@
 from Codificacion import dct, dwt, pca, gabor
 from Segmentacion.normalize import normalize
 from Segmentacion.segment import segment
-from cv2 import createCLAHE, imshow,waitKey,resize
+from cv2 import createCLAHE, imshow,waitKey,resize,circle
 import numpy as np
 
 
@@ -29,6 +29,11 @@ def process_iris(img,cod:str):
 
 def process_norm_iris(img,cod:str):
     img=resize(img,(512,64))
+    """img=circle(img, (130,120),100, (0,255,0), -1)
+    img=circle(img, (380,130),80, (0,255,0), -1)
+    coords=np.where(img==255)
+    img=img.astype(float)
+    img[coords]=np.nan"""
     match cod:
         case "dct":
             temp, mask=dct.extractFeature_dct(img)

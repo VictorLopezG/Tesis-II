@@ -92,13 +92,13 @@ def normalize(image, x_iris, y_iris, r_iris, x_pupil, y_pupil, r_pupil, radpixel
 	
 	# Extract intensity values into the normalised polar representation through interpolation
 	polar_array = image[yo, xo]
-	polar_array = polar_array / 255
 	#cv2.imshow("im",polar_array)
+	#cv2.waitKey()
+	polar_array = polar_array / 255
 	# Create noise array with location of NaNs in polar_array
 	polar_noise = np.zeros(polar_array.shape)
 	coords = np.where(np.isnan(polar_array))
 	polar_noise[coords] = 1
-	
 	# Get rid of outling points in order to write out the circular pattern
 	image[yo, xo] = 255
 
@@ -109,14 +109,14 @@ def normalize(image, x_iris, y_iris, r_iris, x_pupil, y_pupil, r_pupil, radpixel
 	# Get pixel coords for circle around pupil
 	xp, yp = circlecoords([x_pupil, y_pupil], r_pupil, image.shape)
 	image[yp, xp] = 255
-	
 	# Replace NaNs before performing feature encoding
+	#cv2.imshow("a",image)
+	#cv2.waitKey()
 	coords = np.where((np.isnan(polar_array)))
 	
 	polar_array2 = polar_array
 	
 	polar_array2[coords] = 0.5
-	
 	avg = np.sum(polar_array2) / (polar_array.shape[0] * polar_array.shape[1])
 	polar_array[coords] = avg
 
@@ -158,19 +158,16 @@ def circlecoords(c, r, imgsize, nsides=600):
 	y = np.round(yd2).astype(int)
 	return x, y
 
-
-import cv2
-import numpy as np
-
-def normalize_iris(image, pupil_center, pupil_radius, iris_center, iris_radius, radial_res=64, angular_res=512):
+def normalize_iris(image, pupil_center, pupil_radius, iris_center, iris_radius, radial_res=64, angular_res=512,eyelashThresh=100):
     """
     Normalizes a circular iris region into a rectangular block.
     """
     # Create an empty template for the unrolled iris rectangle
     normalized_iris = np.zeros((radial_res, angular_res))
     
+    
     # Calculate angles from 0 to 2*pi
-    thetas = np.linspace(0, 2 * np.pi, angular_res)
+    thetas = np.linspace(2 * np.pi,0, angular_res)
     
     for j, theta in enumerate(thetas):
         # Locate boundary points on pupil and iris edges at specific angle theta
@@ -190,11 +187,11 @@ def normalize_iris(image, pupil_center, pupil_radius, iris_center, iris_radius, 
             # Map pixel intensity if it falls inside image dimensions
             if 0 <= x < image.shape[1] and 0 <= y < image.shape[0]:
                 normalized_iris[i, j] = image[y, x]
-                
-    return np.uint8(normalized_iris)
-
-import numpy as np
-import cv2
+    #print(normalized_iris)
+    ref = normalized_iris < eyelashThresh
+    coords = np.where(ref == 1)
+    normalized_iris[coords] = np.nan
+    return normalized_iris/255
 
 def rubber_sheet_inverse(polar_img, center, r_min, r_max):
     """

@@ -4,11 +4,12 @@ from sklearn.cluster._hdbscan.hdbscan import HDBSCAN
 from Codificacion.register import register, searchCents, searchTree,searchSCAN
 from os import path,listdir,remove
 from Codificacion.metrics import euclideanDistance,hammingDistance
-from sklearn.metrics import precision_score,recall_score,accuracy_score,f1_score,silhouette_score
+from sklearn.metrics import precision_score,recall_score,accuracy_score,f1_score,silhouette_score,adjusted_rand_score
 import numpy as np
 
 cods=['dwt','gabor','pca']
 clsts=['k-means','b-means','k-means++','avg','ward']
+labels=[]
 
 def joinTable(clusters:HDBSCAN|BisectingKMeans|KMeans|AgglomerativeClustering,ids:list,temps:list):
 	table=[]
@@ -65,6 +66,7 @@ def test(COD:str,CLST:str, n_clusters:int=3):
 	match CLST:
 		case 'k-means':
 			clusters=KMeans(n_clusters=n_clusters,random_state=0).fit(temps)
+			labels.append((clusters.labels_,COD))
 			table=joinTable(clusters,ids,temps)
 			print("Evaluando...")
 			for r in regs:
@@ -75,6 +77,7 @@ def test(COD:str,CLST:str, n_clusters:int=3):
 
 		case 'b-means':
 			clusters=BisectingKMeans(n_clusters=n_clusters,random_state=0).fit(temps)
+			labels.append((clusters.labels_,COD))
 			table=joinTable(clusters,ids,temps)
 			print("Evaluando...")
 			for r in regs:
@@ -85,6 +88,7 @@ def test(COD:str,CLST:str, n_clusters:int=3):
 
 		case 'k-means++':
 			clusters=KMeans(n_clusters=n_clusters,random_state=0,init='k-means++').fit(temps)
+			labels.append((clusters.labels_,COD))
 			table=joinTable(clusters,ids,temps)
 			print("Evaluando...")
 			for r in regs:
@@ -95,6 +99,7 @@ def test(COD:str,CLST:str, n_clusters:int=3):
 		
 		case 'ward':
 			tree=AgglomerativeClustering(n_clusters=n_clusters,linkage='ward').fit(temps)
+			labels.append((tree.labels_,COD))
 			table=joinTable(tree,ids,temps)
 			print("Evaluando...")
 			for r in regs:
@@ -105,6 +110,7 @@ def test(COD:str,CLST:str, n_clusters:int=3):
 
 		case 'avg':
 			tree=AgglomerativeClustering(n_clusters=n_clusters,linkage='average').fit(temps)
+			labels.append((tree.labels_,COD))
 			table=joinTable(tree,ids,temps)
 			print("Evaluando...")
 			for r in regs:
@@ -115,6 +121,7 @@ def test(COD:str,CLST:str, n_clusters:int=3):
 			
 		case 'hdbscan':
 			db=HDBSCAN(min_cluster_size=3,max_cluster_size=35, store_centers='centroid',copy=False).fit(temps)
+			labels.append((db.labels_,COD))
 			table= joinTable(db,ids,temps)
 			print("Evaluando...")
 			for r in regs:
@@ -133,15 +140,25 @@ if __name__=='__main__':
 	for COD in cods:
 		registered=listdir(path.join("Templates",COD))
 		for r in registered: remove(path.join("Templates",COD,r))
-		for n in range(3,20):
-			for CLST in clsts:
-				y_true,preds,sil,avg_t=test(COD,CLST,n)
-				acc=accuracy_score(y_true,preds)
-				pres=precision_score(y_true,preds,average='micro')
-				f1=f1_score(y_true,preds,average='micro')
-				rec=recall_score(y_true,preds,average='micro')
-				print(f"Resultados de {COD} indexado con {CLST} {n}")
-				print(f"Pres:{pres}	TR:{avg_t} SS:{sil}")
-				f=open("results.txt", "a")
-				f.write("{:}\t{:}\t{:}\t{:.4f}\t{:.4f}\t{:.4f}\t{:.4f}\t{:.4f}\t{:.4f}\n".format(CLST,n,COD,acc,pres,f1,rec,avg_t,sil))
-				f.close()
+		#for n in range(3,20):
+		n=3
+		for CLST in clsts:
+			y_true,preds,sil,avg_t=test(COD,CLST,n)
+			acc=accuracy_score(y_true,preds)
+			pres=precision_score(y_true,preds,average='micro')
+			f1=f1_score(y_true,preds,average='micro')
+			rec=recall_score(y_true,preds,average='micro')
+			print(f"Resultados de {COD} indexado con {CLST} {n}")
+			print(f"Pres:{pres}	TR:{avg_t} SS:{sil}")
+			f=open("results.txt", "a")
+			f.write("{:}\t{:}\t{:}\t{:.4f}\t{:.4f}\t{:.4f}\t{:.4f}\t{:.4f}\t{:.4f}\n".format(CLST,n,COD,acc,pres,f1,rec,avg_t,sil))
+			f.close()
+	f=open("ARI.txt",'w')
+	f.write("L1\tL2\tCOD\tARI\n")
+	for i in range(1,len(labels)):
+		for j in range(i):
+			if labels[i][1]==labels[j][1]:
+				score=adjusted_rand_score(labels[i][0],labels[j][0])
+				f.write("{:}\t{:}\t{:}\t{:.4f}\n".format(clsts[i%len(clsts)],clsts[j%len(clsts)],labels[i][1],score))
+	f.close()
+
