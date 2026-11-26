@@ -40,7 +40,7 @@ int main()
     COMB *base=NULL;
     COMB *regs=NULL;
     int n_reg=0;
-    char *path = "C:\\Users\\wings\\Documents\\NetBeansProjects\\Combinatorias\\Combinatoria.txt";
+    char *path = "Combinatoria.txt";
     FILE *arch = fopen(path, "r");
     
     if(arch==NULL){
@@ -86,15 +86,15 @@ int main()
         }
         //printf("%d\n",n_reg);
         for(int j=0;j<5;j++){
-            if(base[i].ids[j]<10){
-                fprintf(arch,"00%d",base[i].ids[j]);
+            if(regs[n_reg-1].ids[j]<10){
+                fprintf(arch,"00%d",regs[n_reg-1].ids[j]);
                 continue;    
             }
-            if(base[i].ids[j]<100){
-                fprintf(arch,"0%d",base[i].ids[j]);
+            if(regs[n_reg-1].ids[j]<100){
+                fprintf(arch,"0%d",regs[n_reg-1].ids[j]);
             }
-            if(base[i].ids[j]>=100){
-                fprintf(arch,"%d",base[i].ids[j]);
+            if(regs[n_reg-1].ids[j]>=100){
+                fprintf(arch,"%d",regs[n_reg-1].ids[j]);
             }
         }
         fprintf(validas,"\n");
