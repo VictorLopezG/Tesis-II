@@ -7,8 +7,8 @@ from Codificacion.metrics import euclideanDistance,hammingDistance
 from sklearn.metrics import precision_score,recall_score,accuracy_score,f1_score,silhouette_score,adjusted_rand_score
 import numpy as np
 
-cods=['dwt','gabor','pca']
-clsts=['k-means','b-means','k-means++','avg','ward']
+cods=['dwt','gabor','pca','dct']
+clsts=['k-means','b-means','k-means++','avg','ward','hdbscan']
 labels=[]
 
 def joinTable(clusters:HDBSCAN|BisectingKMeans|KMeans|AgglomerativeClustering,ids:list,temps:list):

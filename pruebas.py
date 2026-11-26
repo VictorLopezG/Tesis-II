@@ -6,22 +6,24 @@ from Codificacion.process import normalizeIris
 path=["CASIA/TEST/1/001_1_3.jpg",'imputedImgs/IrisSint/A_125200_iris_sintetico.jpg','imputedImgs/Circs/IrisSint/CA_125199_iris_sintetico.jpg']
 circ=imread(path[0],0)
 norm=imread(path[1],0)
+#circ=resize(circ,(320,280))
 #norm,_=normalizeIris(circ)
 norm=resize(norm,(512,64))
 norm=circle(norm, (130,120),100, (0,255,0), -1)
 norm=circle(norm, (380,130),80, (0,255,0), -1)
-
+c=rubber_sheet_inverse(norm,(290,320),39,103)
 #norm2,noise_a=normalizeIris(circ)
-iris, pupila, noise=segment(circ)
+iris, pupila, noise=segment(c)
+print(iris[2],pupila[2])
 norm3=normalize_iris(noise,(pupila[1],pupila[0]),pupila[2],(iris[1],iris[0]),iris[2])
-norm4,noise_arr=normalize(noise, iris[1], iris[0], iris[2], pupila[1], pupila[0], pupila[2], 64, 512)
-x,y=circlecoords((iris[1],iris[0]),iris[2]*2.5,circ.shape)
-circ[y,x]=255
+norm4,noise_arr=normalize(noise, iris[1], iris[0], iris[2], pupila[1], pupila[0], pupila[2])
+x,y=circlecoords((iris[1],iris[0]),iris[2],circ.shape)
+c[y,x]=255
 x,y=circlecoords((pupila[1],pupila[0]),pupila[2],circ.shape)
-circ[y,x]=255
+c[y,x]=255
 imshow("N",norm)
 waitKey()
-imshow("C",circ)
+imshow("C",c)
 waitKey()
 #imshow("N2",norm2)
 #waitKey()

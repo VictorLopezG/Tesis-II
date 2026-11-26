@@ -2,7 +2,7 @@ import numpy as np
 import cv2
 
 
-def normalize(image, x_iris, y_iris, r_iris, x_pupil, y_pupil, r_pupil, radpixels, angulardiv):
+def normalize(image, x_iris, y_iris, r_iris, x_pupil, y_pupil, r_pupil, radpixels:int=64, angulardiv:int=512):
 	"""
 	Description:
 		Normalize iris region by unwraping the circular region into a rectangular
@@ -212,7 +212,7 @@ def rubber_sheet_inverse(polar_img, center, r_min, r_max):
     # Estimate size of output Cartesian canvas
     max_radius_int = int(np.ceil(r_max))
     canvas_size = 2 * max_radius_int + 1
-    cart_img = np.zeros((canvas_size, canvas_size), dtype=polar_img.dtype)
+    cart_img = np.full((canvas_size, canvas_size),fill_value=255, dtype=polar_img.dtype)
     
     # Shift center to the local canvas coordinates
     local_cx = max_radius_int
@@ -238,5 +238,7 @@ def rubber_sheet_inverse(polar_img, center, r_min, r_max):
                 theta_idx = np.clip(theta_idx, 0, num_thetas - 1)
                 
                 cart_img[y, x] = polar_img[r_idx, theta_idx]
+            if r<r_min:
+                cart_img[y,x]=0
                 
     return cart_img
