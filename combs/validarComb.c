@@ -24,14 +24,16 @@ int validar(COMB* regs,COMB c, int n_reg){
     return 1;
 }
 
-void registrar(COMB* regs, COMB c, int *n_reg){
+int registrar(COMB* regs, COMB c, int *n_reg){
     int val=validar(regs,c,*n_reg);
     if(val){
         regs[*n_reg]=c;
         printf("%d ",*n_reg);
         *n_reg=*n_reg+1;
         printf("%d\n",*n_reg);
+        return 1;
     }
+    return 0;
 }
 
 
@@ -48,7 +50,7 @@ int main()
         return 1;
     }
 
-    int cant=4000000, k=0;
+    int cant=4000, k=0;
     base=(COMB*)malloc(sizeof(COMB)*cant);
     regs=(COMB*)malloc(sizeof(COMB)*cant);
     
@@ -79,26 +81,26 @@ int main()
     FILE *validas=fopen("validas.txt","w");
     
     for(int i=0;i<k;i++){
-        registrar(regs,base[i],&n_reg);
+        int r=registrar(regs,base[i],&n_reg);
         if(i%1000==0){
             printf("%d combinaciones registradas\n",i);
             //printf("%d %d %d %d %d\n",base[i].ids[0],base[i].ids[1],base[i].ids[2],base[i].ids[3],base[i].ids[4]);
         }
-        //printf("%d\n",n_reg);
-        for(int j=0;j<5;j++){
-            if(regs[n_reg-1].ids[j]<10){
-                fprintf(arch,"00%d",regs[n_reg-1].ids[j]);
-                continue;    
+        if(r){
+            for(int j=0;j<5;j++){
+                if(regs[n_reg-1].ids[j]<10){
+                    fprintf(arch,"00%d",regs[n_reg-1].ids[j]);
+                    continue;    
+                }
+                if(regs[n_reg-1].ids[j]<100){
+                    fprintf(arch,"0%d",regs[n_reg-1].ids[j]);
+                }
+                if(regs[n_reg-1].ids[j]>=100){
+                    fprintf(arch,"%d",regs[n_reg-1].ids[j]);
+                }
             }
-            if(regs[n_reg-1].ids[j]<100){
-                fprintf(arch,"0%d",regs[n_reg-1].ids[j]);
-            }
-            if(regs[n_reg-1].ids[j]>=100){
-                fprintf(arch,"%d",regs[n_reg-1].ids[j]);
-            }
-        }
-        fprintf(validas,"\n");
-        //printf("%d %d %d %d %d\n",base[i].ids[0],base[i].ids[1],base[i].ids[2],base[i].ids[3],base[i].ids[4]);
+            fprintf(validas,"\n");
+        }//printf("%d %d %d %d %d\n",base[i].ids[0],base[i].ids[1],base[i].ids[2],base[i].ids[3],base[i].ids[4]);
     }
     fclose(validas);
     return 0;
